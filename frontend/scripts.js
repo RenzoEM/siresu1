@@ -65,3 +65,21 @@ if (registerForm) {
     }
   });
 }
+
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const icon = btn.querySelector("img");
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.src = "eye-off.svg"; // Ícono de ojo tachado
+  } else {
+    input.type = "password";
+    icon.src = "eye.svg"; // Ícono de ojo abierto
+  }
+}
+
+
+
+
+
