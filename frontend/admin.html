@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin - SIRESU</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h2>Panel de Administración</h2>
+      <nav>
+        <a href="index.html">Cerrar sesión</a>
+      </nav>
+    </header>
+
+    <section class="module">
+      <h3>👥 Cuentas Registradas</h3>
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="user-list">
+          <!-- JS insertará aquí las cuentas -->
+        </tbody>
+      </table>
+    </section>
+
+    <section class="module">
+      <h3>➕ Crear Nuevo Administrador</h3>
+      <form id="admin-create-form">
+        <input type="text" id="email" name="email" placeholder="Correo institucional" required>
+        <input type="password" id="password" name="password" placeholder="Contraseña" required>
+        <button type="submit">Crear Admin</button>
+      </form>
+    </section>
+
+    <section class="module">
+      <h3>📂 Gestión de Reportes</h3>
+      <p>Listado y clasificación automática de los reportes estudiantiles.</p>
+      <!-- Aquí se cargarán los reportes con JS -->
+    </section>
+  </div>
+
+  <script src="scripts.js"></script>
+</body>
+</html>

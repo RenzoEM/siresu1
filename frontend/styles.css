@@ -1,0 +1,138 @@
+/* styles.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+body {
+  background: linear-gradient(to right, #4e54c8, #8f94fb);
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  color: #333;
+}
+
+.container {
+  background: white;
+  padding: 3rem;
+  border-radius: 16px;
+  max-width: 960px;
+  width: 100%;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #3f51b5;
+}
+
+nav {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+nav a {
+  background: #3f51b5;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+nav a:hover {
+  background: #303f9f;
+}
+
+.module {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.module h3 {
+  margin-bottom: 0.5rem;
+  color: #2c387e;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+select,
+button {
+  width: 100%;
+  padding: 0.9rem;
+  margin-top: 0.75rem;
+  margin-bottom: 1.25rem;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: #3f51b5;
+  outline: none;
+}
+
+button {
+  background: #3f51b5;
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #303f9f;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.user-table th,
+.user-table td {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.user-table th {
+  background-color: #e8eaf6;
+  color: #3f51b5;
+  font-weight: bold;
+}
+
+.message {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.link {
+  color: #3f51b5;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+  color: #303f9f;
+}

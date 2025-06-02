@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro - Siresu</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>Crear Cuenta</h2>
+    <form id="register-form">
+      <input type="text" id="username" name="username" placeholder="Usuario" required />
+      <input type="password" id="password" name="password" placeholder="Contraseña" required />
+      <button type="submit">Registrarse</button>
+    </form>
+
+    <div style="text-align: center; margin: 1rem 0;">
+      <p>O regístrate con:</p>
+      <a href="http://localhost:5000/login/google">
+        <button type="button" style="background: #db4437;">Registrar con Google</button>
+      </a>
+    </div>
+
+    <p class="message">¿Ya tienes cuenta? <a href="index.html" class="link">Inicia sesión aquí</a></p>
+  </div>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
