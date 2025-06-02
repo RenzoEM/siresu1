@@ -165,7 +165,7 @@ if __name__ == "__main__":
     
 from flask_cors import CORS
 
-app = Flask(__name__)
+CORS(app)  # Permite desde cualquier origen
 CORS(app, origins=["https://siresu1.vercel.app"])
 
     
