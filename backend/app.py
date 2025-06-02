@@ -142,6 +142,23 @@ def crear_admin_inicial():
         conn.close()
 
 
+@app.route("/crear-admin-secundario", methods=["GET"])
+def crear_admin_secundario():
+    from database import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
+                       ("admin2@gmail.com", "admin456", "admin"))
+        conn.commit()
+        return "✅ Admin secundario creado con éxito", 200
+    except Exception as e:
+        return f"❌ Error al crear admin: {str(e)}", 400
+    finally:
+        cursor.close()
+        conn.close()
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
