@@ -42,23 +42,31 @@ def register():
 
 @app.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
 
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
 
-    if user:
-        return jsonify({
-            "message": "Login exitoso",
-            "role": user["role"]
-        }), 200
-    return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
+        if user:
+            return jsonify({
+                "message": "Login exitoso",
+                "role": user["role"]
+            }), 200
+        else:
+            return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
+    except Exception as e:
+        # 🔥 Agrega esto para saber qué pasa en Render
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": f"Error interno: {str(e)}"}), 500
+
 
 
 
