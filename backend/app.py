@@ -62,6 +62,7 @@ def login():
 
 
 
+
 @app.route("/google-login")
 def google_login():
     if not google.authorized:
@@ -104,69 +105,15 @@ def get_users():
     conn.close()
     return jsonify(users), 200
 
-
-@app.route("/create-admin", methods=["POST"])
-def create_admin():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, 'admin')",
-                       (username, password))
-        conn.commit()
-        return jsonify({"message": "Admin creado exitosamente"}), 201
-    except Exception as e:
-        return jsonify({"message": "Error al crear admin"}), 400
-    finally:
-        cursor.close()
-        conn.close()
-
-
-@app.route("/crear-admin-inicial", methods=["GET"])
-def crear_admin_inicial():
-    from database import get_db_connection
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
-                       ("admin@gmail.com", "admin123", "admin"))
-        conn.commit()
-        return "✅ Admin creado exitosamente", 200
-    except Exception as e:
-        return f"❌ Error al crear admin: {str(e)}", 400
-    finally:
-        cursor.close()
-        conn.close()
-
-
-@app.route("/crear-admin-secundario", methods=["GET"])
-def crear_admin_secundario():
-    from database import get_db_connection
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
-                       ("admin2@gmail.com", "admin456", "admin"))
-        conn.commit()
-        return "✅ Admin secundario creado con éxito", 200
-    except Exception as e:
-        return f"❌ Error al crear admin: {str(e)}", 400
-    finally:
-        cursor.close()
-        conn.close()
-
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
     
 from flask_cors import CORS
 
-CORS(app)  # Permite desde cualquier origen
-CORS(app, origins=["https://siresu1.vercel.app"])
+app = Flask(__name__)
+CORS(app, origins=["https://siresu1.vercel.app"])  # CORS solo desde Vercel
+
 
     
     
