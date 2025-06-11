@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 *.env
 firebase_key.json
+firebase_key.b64
+.env
+__pycache__/
+
