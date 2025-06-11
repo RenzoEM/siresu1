@@ -4,5 +4,7 @@ mysql-connector-python
 werkzeug
 flask-dance
 python-dotenv
+firebase-admin
+
 
 

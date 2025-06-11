@@ -4,6 +4,10 @@ from flask_dance.contrib.google import make_google_blueprint, google
 from database import get_db_connection
 import os
 from dotenv import load_dotenv
+from flask import Flask, request, jsonify
+from firebase_config import db
+
+app = Flask(__name__)
 
 load_dotenv()
 
@@ -24,48 +28,34 @@ def register():
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
-    role = data.get("role", "cliente")
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
-                       (username, password, role))
-        conn.commit()
-        return jsonify({"message": "Registro exitoso"}), 201
-    except Exception as e:
+    ref = db.reference("users")
+    if ref.child(username).get():
         return jsonify({"message": "Usuario ya existe"}), 400
-    finally:
-        cursor.close()
-        conn.close()
+
+    ref.child(username).set({
+        "password": password,
+        "role": "cliente"
+    })
+    return jsonify({"message": "Registro exitoso"}), 201
+
 
 @app.route("/login", methods=["POST"])
 def login():
-    try:
-        data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
 
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
-        user = cursor.fetchone()
-        cursor.close()
-        conn.close()
+    user = db.reference("users").child(username).get()
 
-        if user:
-            return jsonify({
-                "message": "Login exitoso",
-                "role": user["role"]
-            }), 200
-        else:
-            return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
-    except Exception as e:
-        # 🔥 Agrega esto para saber qué pasa en Render
-        import traceback
-        traceback.print_exc()
-        return jsonify({"message": f"Error interno: {str(e)}"}), 500
+    if user and user.get("password") == password:
+        return jsonify({
+            "message": "Login exitoso",
+            "role": user.get("role")
+        }), 200
+
+    return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
+
 
 
 
