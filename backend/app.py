@@ -5,7 +5,6 @@ from database import get_db_connection
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
-from siresu.backend.firebase_config import db
 from firebase_config import db
 
 app = Flask(__name__)
