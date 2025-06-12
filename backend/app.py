@@ -80,7 +80,7 @@ def login():
 @app.route("/google-login")
 def google_login():
     if not google.authorized:
-        return redirect(url_for("google.login"))
+        return redirect(url_for("google.login", _external=True))
 
     resp = google.get("/oauth2/v2/userinfo")
     if not resp.ok:
