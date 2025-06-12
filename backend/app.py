@@ -25,7 +25,9 @@ def sanitize_email(email):
     return email.replace(".", "_").replace("@", "_at_").replace("$", "_d_").replace("#", "_h_").replace("[", "_lb_").replace("]", "_rb_").replace("/", "_sl_")
 
 def correo_valido(email):
-    return "@" in email and email.endswith((".com", ".net", ".org"))
+    # Acepta correos tipo nombre@dominio.extension (cualquier TLD)
+    return bool(re.match(r"[^@]+@[^@]+\.[a-zA-Z]{2,}$", email))
+
 
 def contraseña_valida(password):
     return len(password) >= 8
