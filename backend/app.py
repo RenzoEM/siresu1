@@ -1,21 +1,18 @@
-from flask import Flask, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
-from flask_dance.contrib.google import make_google_blueprint, google
-from database import get_db_connection
-import os
-from dotenv import load_dotenv
-from flask import Flask, request, jsonify
 from firebase_config import db
-
-app = Flask(__name__)
+from flask_dance.contrib.google import make_google_blueprint, google
+import os
+import re
+from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
-app.secret_key = os.getenv("SECRET_KEY", "super_secret_key")
+CORS(app, origins=["https://siresu1.vercel.app"])
+app.secret_key = os.getenv("SECRET_KEY", "clave_secreta")
 
-# Google OAuth
+# Config Google OAuth
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
@@ -23,17 +20,35 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
+# Validaciones
+def correo_valido(email):
+    return "@" in email and (email.endswith(".com") or email.endswith(".org") or email.endswith(".net"))
+
+def contraseña_valida(password):
+    return len(password) >= 8
+
+import re
+
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
 
+    if not is_valid_email(username):
+        return jsonify({"message": "Correo no válido"}), 400
+
+    if len(password) < 8:
+        return jsonify({"message": "La contraseña debe tener al menos 8 caracteres"}), 400
+
     ref = db.reference("users")
-    if ref.child(username).get():
+    if ref.child(username.replace(".", "_")).get():
         return jsonify({"message": "Usuario ya existe"}), 400
 
-    ref.child(username).set({
+    ref.child(username.replace(".", "_")).set({
         "password": password,
         "role": "cliente"
     })
@@ -46,7 +61,13 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    user = db.reference("users").child(username).get()
+    if not correo_valido(username):
+        return jsonify({"message": "Correo inválido"}), 400
+
+    if not contraseña_valida(password):
+        return jsonify({"message": "Contraseña inválida"}), 400
+
+    user = db.child(username.replace(".", "_")).get()
 
     if user and user.get("password") == password:
         return jsonify({
@@ -55,10 +76,6 @@ def login():
         }), 200
 
     return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
-
-
-
-
 
 
 @app.route("/google-login")
@@ -73,45 +90,30 @@ def google_login():
     info = resp.json()
     email = info["email"]
 
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE username = %s", (email,))
-    user = cursor.fetchone()
+    if not is_valid_email(email):
+        return jsonify({"message": "Correo no válido"}), 400
 
-    if not user:
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", (email, '', 'cliente'))
-        conn.commit()
+    ref = db.reference("users")
+    user_ref = ref.child(email.replace(".", "_"))
+    user_data = user_ref.get()
+
+    if not user_data:
+        user_ref.set({
+            "password": "",  # sin contraseña porque viene de Google
+            "role": "cliente"
+        })
         role = "cliente"
     else:
-        role = user["role"]
+        role = user_data.get("role", "cliente")
 
-    cursor.close()
-    conn.close()
-
+    # Redirigir según rol
     if role == "admin":
-        return redirect("/admin.html")
+        return redirect("https://siresu1.vercel.app/admin.html")
     else:
-        return redirect("/cliente.html")
+        return redirect("https://siresu1.vercel.app/cliente.html")
 
-@app.route("/users", methods=["GET"])
-def get_users():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, username, role FROM users")
-    users = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return jsonify(users), 200
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-    
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app, origins=["https://siresu1.vercel.app"])  # CORS solo desde Vercel
-
-
-    
-    
