@@ -1,33 +1,28 @@
 from flask import Flask, request, jsonify, redirect, url_for
 from flask_cors import CORS
-from flask_dance.contrib.google import make_google_blueprint, google
 from firebase_config import db
-from dotenv import load_dotenv
+from flask_dance.contrib.google import make_google_blueprint, google
 import os
+import re
+from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://siresu1.onrender.com" , "https://siresu1.vercel.app"])
+CORS(app, origins=["https://siresu1.vercel.app"])
 app.secret_key = os.getenv("SECRET_KEY", "clave_secreta")
 
-# Blueprint para Google OAuth
+# Config Google OAuth
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-    scope=["profile", "email"],
-    redirect_url="https://siresu1.onrender.com/login/google/authorized"
+    redirect_url="https://siresu1.onrender.com/login/google/authorized",
+    scope=["profile", "email"]
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
-# Sanear correos para usarlos como claves válidas en Firebase
-def sanitize_email(email):
-    return email.replace(".", "_").replace("@", "_at_").replace("$", "_d_").replace("#", "_h_").replace("[", "_lb_").replace("]", "_rb_").replace("/", "_sl_")
-
 def correo_valido(email):
-    # Acepta correos tipo nombre@dominio.extension (cualquier TLD)
-    return bool(re.match(r"[^@]+@[^@]+\.[a-zA-Z]{2,}$", email))
-
+    return re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email)
 
 def contraseña_valida(password):
     return len(password) >= 8
@@ -42,17 +37,21 @@ def register():
         return jsonify({"message": "Correo no válido"}), 400
 
     if not contraseña_valida(password):
-        return jsonify({"message": "Contraseña inválida"}), 400
+        return jsonify({"message": "La contraseña debe tener al menos 8 caracteres"}), 400
 
-    ref = db.reference("users")
-    if ref.child(username.replace(".", "_")).get():
-        return jsonify({"message": "Usuario ya existe"}), 400
+    try:
+        ref = db
+        user_key = username.replace(".", "_")
+        if ref.child(user_key).get():
+            return jsonify({"message": "Usuario ya existe"}), 400
 
-    ref.child(username.replace(".", "_")).set({
-        "password": password,
-        "role": "cliente"
-    })
-    return jsonify({"message": "Registro exitoso"}), 201
+        ref.child(user_key).set({
+            "password": password,
+            "role": "cliente"
+        })
+        return jsonify({"message": "Registro exitoso"}), 201
+    except Exception as e:
+        return jsonify({"message": f"Error en el servidor: {str(e)}"}), 500
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -60,21 +59,19 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    if not correo_valido(username):
-        return jsonify({"message": "Correo no válido"}), 400
-    if not contraseña_valida(password):
-        return jsonify({"message": "Contraseña inválida"}), 400
+    if not correo_valido(username) or not contraseña_valida(password):
+        return jsonify({"message": "Credenciales inválidas"}), 400
 
-    user_key = sanitize_email(username)
-    user = db.reference("users").child(user_key).get()
-
-    if user and user.get("password") == password:
-        return jsonify({
-            "message": "Login exitoso",
-            "role": user.get("role")
-        }), 200
-
-    return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
+    try:
+        user = db.child(username.replace(".", "_")).get()
+        if user and user.get("password") == password:
+            return jsonify({
+                "message": "Login exitoso",
+                "role": user.get("role")
+            }), 200
+        return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
+    except Exception as e:
+        return jsonify({"message": f"Error en el servidor: {str(e)}"}), 500
 
 @app.route("/google-login")
 def google_login():
@@ -91,21 +88,20 @@ def google_login():
     if not correo_valido(email):
         return jsonify({"message": "Correo no válido"}), 400
 
-    user_key = sanitize_email(email)
-    ref = db.reference("users")
-    user_ref = ref.child(user_key)
-    user_data = user_ref.get()
+    ref = db
+    user_key = email.replace(".", "_")
+    user_data = ref.child(user_key).get()
 
     if not user_data:
-        user_ref.set({
-            "password": "",
+        ref.child(user_key).set({
+            "password": "",  # sin contraseña por Google
             "role": "cliente"
         })
         role = "cliente"
     else:
         role = user_data.get("role", "cliente")
 
-    # Redirige según el rol
+    # Redirigir a la vista según el rol
     if role == "admin":
         return redirect("https://siresu1.vercel.app/admin.html")
     else:

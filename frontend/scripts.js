@@ -5,8 +5,9 @@ const loginForm = document.getElementById("login-form");
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = loginForm.username.value.trim();
-    const password = loginForm.password.value.trim();
+    const formData = new FormData(loginForm);
+    const username = formData.get("username");
+    const password = formData.get("password");
 
     try {
       const res = await fetch(`${backendURL}/login`, {
@@ -15,7 +16,9 @@ if (loginForm) {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      const data = JSON.parse(text);
+
       if (res.ok) {
         alert("¡Login exitoso!");
         if (data.role === "admin") {
@@ -26,9 +29,9 @@ if (loginForm) {
       } else {
         alert(data.message || "Credenciales incorrectas");
       }
-    } catch (err) {
+    } catch (error) {
       alert("Error de conexión con el servidor");
-      console.error("Error en login:", err);
+      console.error("Error al hacer login:", error);
     }
   });
 }
@@ -38,8 +41,9 @@ const registerForm = document.getElementById("register-form");
 if (registerForm) {
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = registerForm.username.value.trim();
-    const password = registerForm.password.value.trim();
+    const formData = new FormData(registerForm);
+    const username = formData.get("username");
+    const password = formData.get("password");
 
     try {
       const res = await fetch(`${backendURL}/register`, {
@@ -48,16 +52,18 @@ if (registerForm) {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      const data = JSON.parse(text);
+
       if (res.ok) {
         alert("¡Registro exitoso!");
         window.location.href = "index.html";
       } else {
         alert(data.message || "Error al registrar");
       }
-    } catch (err) {
+    } catch (error) {
       alert("Error de conexión con el servidor");
-      console.error("Error en registro:", err);
+      console.error("Error en registro:", error);
     }
   });
 }
