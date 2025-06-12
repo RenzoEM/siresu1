@@ -40,16 +40,15 @@ def register():
 
     if not correo_valido(username):
         return jsonify({"message": "Correo no válido"}), 400
+
     if not contraseña_valida(password):
-        return jsonify({"message": "La contraseña debe tener al menos 8 caracteres"}), 400
+        return jsonify({"message": "Contraseña inválida"}), 400
 
-    user_key = sanitize_email(username)
     ref = db.reference("users")
-
-    if ref.child(user_key).get():
+    if ref.child(username.replace(".", "_")).get():
         return jsonify({"message": "Usuario ya existe"}), 400
 
-    ref.child(user_key).set({
+    ref.child(username.replace(".", "_")).set({
         "password": password,
         "role": "cliente"
     })
