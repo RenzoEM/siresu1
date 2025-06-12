@@ -29,29 +29,29 @@ def contraseña_valida(password):
 
 @app.route("/register", methods=["POST"])
 def register():
+    if not request.is_json:
+        return jsonify({"message": "Se requiere JSON"}), 415
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
 
     if not correo_valido(username):
-        return jsonify({"message": "Correo no válido"}), 400
-
+        return jsonify({"message": "Correo inválido"}), 400
     if not contraseña_valida(password):
-        return jsonify({"message": "La contraseña debe tener al menos 8 caracteres"}), 400
+        return jsonify({"message": "Contraseña inválida"}), 400
 
-    try:
-        ref = db
-        user_key = username.replace(".", "_")
-        if ref.child(user_key).get():
-            return jsonify({"message": "Usuario ya existe"}), 400
+    user_key = username.replace(".", "_")
+    ref = db  # ✅ CORRECTO
 
-        ref.child(user_key).set({
-            "password": password,
-            "role": "cliente"
-        })
-        return jsonify({"message": "Registro exitoso"}), 201
-    except Exception as e:
-        return jsonify({"message": f"Error en el servidor: {str(e)}"}), 500
+    if ref.child(user_key).get():
+        return jsonify({"message": "Usuario ya existe"}), 400
+
+    ref.child(user_key).set({
+        "password": password,
+        "role": "cliente"
+    })
+    return jsonify({"message": "Registro exitoso"}), 201
+
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -106,6 +106,11 @@ def google_login():
         return redirect("https://siresu1.vercel.app/admin.html")
     else:
         return redirect("https://siresu1.vercel.app/cliente.html")
+    
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return jsonify({"message": f"Error inesperado en el servidor: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

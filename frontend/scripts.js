@@ -53,7 +53,13 @@ if (registerForm) {
       });
 
       const text = await res.text();
-      const data = JSON.parse(text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Respuesta no válida del servidor");
+      }
 
       if (res.ok) {
         alert("¡Registro exitoso!");

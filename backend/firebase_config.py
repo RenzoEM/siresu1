@@ -20,4 +20,6 @@ if not firebase_admin._apps:
         'databaseURL': 'https://siresu-1f1ca-default-rtdb.firebaseio.com/'
     })
 
-db = db.reference("users")
+ref = db  # Ya es referencia a "users"
+
+
