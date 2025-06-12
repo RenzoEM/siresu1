@@ -1,9 +1,8 @@
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from firebase_config import db
 from flask_dance.contrib.google import make_google_blueprint, google
 import os
-import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,7 +11,7 @@ app = Flask(__name__)
 CORS(app, origins=["https://siresu1.vercel.app"])
 app.secret_key = os.getenv("SECRET_KEY", "clave_secreta")
 
-# Config Google OAuth
+# Configuración de Google OAuth
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
@@ -20,41 +19,40 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
-# Validaciones
+
+# Función para validar correos y contraseñas
 def correo_valido(email):
     return "@" in email and (email.endswith(".com") or email.endswith(".org") or email.endswith(".net"))
 
 def contraseña_valida(password):
     return len(password) >= 8
 
-import re
 
-def is_valid_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
-
+# Registro normal
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
 
-    if not is_valid_email(username):
+    if not correo_valido(username):
         return jsonify({"message": "Correo no válido"}), 400
 
-    if len(password) < 8:
+    if not contraseña_valida(password):
         return jsonify({"message": "La contraseña debe tener al menos 8 caracteres"}), 400
 
-    ref = db.reference("users")
-    if ref.child(username.replace(".", "_")).get():
+    user_ref = db.child("users").child(username.replace(".", "_"))
+    if user_ref.get():
         return jsonify({"message": "Usuario ya existe"}), 400
 
-    ref.child(username.replace(".", "_")).set({
+    user_ref.set({
         "password": password,
         "role": "cliente"
     })
     return jsonify({"message": "Registro exitoso"}), 201
 
 
+# Login normal
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -67,7 +65,8 @@ def login():
     if not contraseña_valida(password):
         return jsonify({"message": "Contraseña inválida"}), 400
 
-    user = db.child(username.replace(".", "_")).get()
+    user_ref = db.child("users").child(username.replace(".", "_"))
+    user = user_ref.get()
 
     if user and user.get("password") == password:
         return jsonify({
@@ -78,6 +77,7 @@ def login():
     return jsonify({"message": "Usuario o contraseña incorrectos"}), 401
 
 
+# Login con Google
 @app.route("/google-login")
 def google_login():
     if not google.authorized:
@@ -88,30 +88,28 @@ def google_login():
         return jsonify({"message": "Error al obtener datos de Google"}), 400
 
     info = resp.json()
-    email = info["email"]
+    email = info.get("email")
 
-    if not is_valid_email(email):
-        return jsonify({"message": "Correo no válido"}), 400
+    if not correo_valido(email):
+        return jsonify({"message": "Correo de Google no válido"}), 400
 
-    ref = db.reference("users")
-    user_ref = ref.child(email.replace(".", "_"))
+    user_ref = db.child("users").child(email.replace(".", "_"))
     user_data = user_ref.get()
 
     if not user_data:
         user_ref.set({
-            "password": "",  # sin contraseña porque viene de Google
+            "password": "",  # Vacío porque es login con Google
             "role": "cliente"
         })
         role = "cliente"
     else:
         role = user_data.get("role", "cliente")
 
-    # Redirigir según rol
+    # Redirección por rol
     if role == "admin":
         return redirect("https://siresu1.vercel.app/admin.html")
     else:
         return redirect("https://siresu1.vercel.app/cliente.html")
-
 
 
 if __name__ == "__main__":
