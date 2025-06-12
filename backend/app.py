@@ -8,7 +8,7 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://siresu1.vercel.app"])
+CORS(app, origins=["https://siresu1.onrender.com" , "https://siresu1.vercel.app"])
 app.secret_key = os.getenv("SECRET_KEY", "clave_secreta")
 
 # Blueprint para Google OAuth
