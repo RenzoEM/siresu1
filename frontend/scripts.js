@@ -1,13 +1,12 @@
-const backendURL = "https://siresu1.onrender.com"; // URL del backend
+const backendURL = "https://siresu1.onrender.com";
 
 // LOGIN
 const loginForm = document.getElementById("login-form");
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const formData = new FormData(loginForm);
-    const username = formData.get("username").trim();
-    const password = formData.get("password").trim();
+    const username = loginForm.username.value.trim();
+    const password = loginForm.password.value.trim();
 
     try {
       const res = await fetch(`${backendURL}/login`, {
@@ -17,7 +16,6 @@ if (loginForm) {
       });
 
       const data = await res.json();
-
       if (res.ok) {
         alert("¡Login exitoso!");
         if (data.role === "admin") {
@@ -28,9 +26,9 @@ if (loginForm) {
       } else {
         alert(data.message || "Credenciales incorrectas");
       }
-    } catch (error) {
+    } catch (err) {
       alert("Error de conexión con el servidor");
-      console.error("Error al hacer login:", error);
+      console.error("Error en login:", err);
     }
   });
 }
@@ -40,19 +38,8 @@ const registerForm = document.getElementById("register-form");
 if (registerForm) {
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const formData = new FormData(registerForm);
-    const username = formData.get("username").trim();
-    const password = formData.get("password").trim();
-
-    if (!username.includes("@") || !(username.endsWith(".com") || username.endsWith(".net") || username.endsWith(".org"))) {
-      alert("❌ Ingresa un correo válido (debe contener @ y terminar en .com, .net o .org)");
-      return;
-    }
-
-    if (password.length < 8) {
-      alert("❌ La contraseña debe tener al menos 8 caracteres");
-      return;
-    }
+    const username = registerForm.username.value.trim();
+    const password = registerForm.password.value.trim();
 
     try {
       const res = await fetch(`${backendURL}/register`, {
@@ -62,30 +49,15 @@ if (registerForm) {
       });
 
       const data = await res.json();
-
       if (res.ok) {
-        alert("¡Registro exitoso! Ahora inicia sesión.");
+        alert("¡Registro exitoso!");
         window.location.href = "index.html";
       } else {
         alert(data.message || "Error al registrar");
       }
-    } catch (error) {
+    } catch (err) {
       alert("Error de conexión con el servidor");
-      console.error("Error al registrar:", error);
+      console.error("Error en registro:", err);
     }
   });
-}
-
-// Mostrar / ocultar contraseña
-function togglePassword(inputId, btn) {
-  const input = document.getElementById(inputId);
-  const icon = btn.querySelector("img");
-
-  if (input.type === "password") {
-    input.type = "text";
-    if (icon) icon.src = "eye-off.svg";
-  } else {
-    input.type = "password";
-    if (icon) icon.src = "eye.svg";
-  }
 }

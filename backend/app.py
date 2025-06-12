@@ -2,31 +2,31 @@ from flask import Flask, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import make_google_blueprint, google
 from firebase_config import db
-import os
 from dotenv import load_dotenv
+import os
 import re
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://siresu1.vercel.app"])
 app.secret_key = os.getenv("SECRET_KEY", "clave_secreta")
+CORS(app, origins=["https://siresu1.vercel.app"])
 
 # Google OAuth
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     scope=["profile", "email"],
-    redirect_to="google_login"
+    redirect_url="https://siresu1.onrender.com/login/google/authorized"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
 
-def correo_valido(email):
-    return bool(re.match(r"^[\w\.-]+@[\w\.-]+\.(com|org|net)$", email))
+def es_correo_valido(email):
+    return bool(re.match(r"^[^@]+@[^@]+\.(com|net|org)$", email))
 
 
-def contraseña_valida(password):
+def es_contraseña_valida(password):
     return len(password) >= 8
 
 
@@ -36,23 +36,19 @@ def register():
     username = data.get("username")
     password = data.get("password")
 
-    if not correo_valido(username):
+    if not es_correo_valido(username):
         return jsonify({"message": "Correo no válido"}), 400
+    if not es_contraseña_valida(password):
+        return jsonify({"message": "Contraseña muy corta"}), 400
 
-    if not contraseña_valida(password):
-        return jsonify({"message": "La contraseña debe tener al menos 8 caracteres"}), 400
-
-    ref = db.reference("users")
-    key = username.replace(".", "_").replace("@", "_at_")
-
-    if ref.child(key).get():
+    user_key = username.replace(".", "_")
+    if db.child(user_key).get():
         return jsonify({"message": "Usuario ya existe"}), 400
 
-    ref.child(key).set({
+    db.child(user_key).set({
         "password": password,
         "role": "cliente"
     })
-
     return jsonify({"message": "Registro exitoso"}), 201
 
 
@@ -62,12 +58,12 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    if not correo_valido(username) or not contraseña_valida(password):
-        return jsonify({"message": "Credenciales inválidas"}), 400
+    if not es_correo_valido(username):
+        return jsonify({"message": "Correo inválido"}), 400
+    if not es_contraseña_valida(password):
+        return jsonify({"message": "Contraseña inválida"}), 400
 
-    key = username.replace(".", "_").replace("@", "_at_")
-    user = db.reference("users").child(key).get()
-
+    user = db.child(username.replace(".", "_")).get()
     if user and user.get("password") == password:
         return jsonify({
             "message": "Login exitoso",
@@ -80,31 +76,25 @@ def login():
 @app.route("/google-login")
 def google_login():
     if not google.authorized:
-        return redirect(url_for("google.login", _external=True))
+        return redirect(url_for("google.login"))
 
     resp = google.get("/oauth2/v2/userinfo")
     if not resp.ok:
-        return jsonify({"message": "Error al obtener datos de Google"}), 400
+        return jsonify({"message": "Error con Google"}), 400
 
-    info = resp.json()
-    email = info["email"]
+    email = resp.json().get("email")
+    user_key = email.replace(".", "_")
+    user = db.child(user_key).get()
 
-    if not correo_valido(email):
-        return jsonify({"message": "Correo no válido"}), 400
-
-    key = email.replace(".", "_").replace("@", "_at_")
-    ref = db.reference("users")
-    user_ref = ref.child(key)
-
-    if not user_ref.get():
-        user_ref.set({
+    if not user:
+        db.child(user_key).set({
             "password": "",
             "role": "cliente"
         })
+        role = "cliente"
+    else:
+        role = user.get("role", "cliente")
 
-    role = user_ref.get().get("role", "cliente")
-
-    # Redirigir al frontend
     if role == "admin":
         return redirect("https://siresu1.vercel.app/admin.html")
     else:
