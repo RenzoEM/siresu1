@@ -60,7 +60,7 @@
       const password = document.getElementById("nuevo-password").value;
       const rol = document.getElementById("nuevo-rol").value;
 
-      const res = await fetch("https://siresu1.onrender.com/api/crear_usuario", {
+      const res = await fetch("https://siresu1.onrender.com/crear-usuario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo, password, rol })

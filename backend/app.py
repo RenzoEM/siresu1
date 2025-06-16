@@ -17,9 +17,11 @@ app.secret_key = os.getenv("SECRET_KEY", "clave_secreta")
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-    scope=["profile", "email"]
+    scope=["profile", "email"],
+    redirect_url="/login/google/authorized"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
+
 
 
 def correo_valido(email):
@@ -131,27 +133,34 @@ def crear_reclamo():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/crear_usuario", methods=["POST"])
+@app.route("/crear-usuario", methods=["POST"])
 def crear_usuario():
-    data = request.json
-    if not data:
-        return jsonify({"error": "Datos no proporcionados"}), 400
+    data = request.get_json()
+    correo = data.get("correo", "").strip()
+    password = data.get("password", "").strip()
+    rol = data.get("rol", "cliente").strip()
 
-    correo = data.get("username")
-    password = data.get("password")
-    rol = data.get("rol", "cliente")
-
-    if not correo or not password or not correo_valido(correo) or not contraseña_valida(password):
-        return jsonify({"error": "Datos inválidos"}), 400
+    if not correo or "@" not in correo or "." not in correo:
+        return jsonify({"error": "Correo inválido"}), 400
+    if len(password) < 8:
+        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres"}), 400
+    if rol not in ["cliente", "admin"]:
+        return jsonify({"error": "Rol inválido"}), 400
 
     try:
-        user_ref = firestore_db.collection("users").document(correo)
+        user_ref = db.collection("users").document(correo)
         if user_ref.get().exists:
             return jsonify({"error": "El usuario ya existe"}), 400
-        user_ref.set({"password": password, "role": rol})
-        return jsonify({"success": True})
+
+        user_ref.set({
+            "password": password,
+            "role": rol
+        })
+        return jsonify({"message": "Usuario creado exitosamente"}), 201
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Error al crear usuario: {str(e)}"}), 500
+
 
 
 @app.route("/api/reclamos", methods=["GET"])
