@@ -2,52 +2,95 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Admin - SIRESU</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Gestión de Reclamos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <h2>Panel de Administración</h2>
-      <nav>
-        <a href="index.html">Cerrar sesión</a>
-      </nav>
-    </header>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
+    <h1 class="text-2xl font-bold mb-4 text-center">🔒 Panel Administrativo</h1>
 
-    <section class="module">
-      <h3>👥 Cuentas Registradas</h3>
-      <table class="user-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Correo</th>
-            <th>Rol</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="user-list">
-          <!-- JS insertará aquí las cuentas -->
-        </tbody>
-      </table>
-    </section>
-
-    <section class="module">
-      <h3>➕ Crear Nuevo Administrador</h3>
-      <form id="admin-create-form">
-        <input type="text" id="email" name="email" placeholder="Correo institucional" required>
-        <input type="password" id="password" name="password" placeholder="Contraseña" required>
-        <button type="submit">Crear Admin</button>
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-2">📋 Crear Usuario</h2>
+      <form id="usuario-form" class="space-y-3">
+        <input type="email" id="nuevo-correo" required placeholder="Correo electrónico" class="w-full p-2 border rounded">
+        <input type="password" id="nuevo-password" required placeholder="Contraseña" class="w-full p-2 border rounded">
+        <select id="nuevo-rol" required class="w-full p-2 border rounded">
+          <option value="">Seleccionar rol</option>
+          <option value="cliente">Cliente</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">➕ Crear Usuario</button>
       </form>
     </section>
 
-    <section class="module">
-      <h3>📂 Gestión de Reportes</h3>
-      <p>Listado y clasificación automática de los reportes estudiantiles.</p>
-      <!-- Aquí se cargarán los reportes con JS -->
+    <section>
+      <h2 class="text-xl font-semibold mb-4">🗂️ Lista de Reclamos</h2>
+      <div id="reclamos-lista" class="space-y-4"></div>
     </section>
   </div>
 
-  <script src="scripts.js"></script>
+  <script>
+    // Crear usuario
+    document.getElementById("usuario-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const correo = document.getElementById("nuevo-correo").value;
+      const password = document.getElementById("nuevo-password").value;
+      const rol = document.getElementById("nuevo-rol").value;
+
+      const res = await fetch("https://siresu1.onrender.com/api/crear_usuario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: correo, password, rol })
+      });
+
+      if (res.ok) {
+        alert("✅ Usuario creado correctamente.");
+        this.reset();
+      } else {
+        alert("❌ Error al crear el usuario.");
+      }
+    });
+
+    // Cargar reclamos
+    async function cargarReclamos() {
+      const res = await fetch("https://siresu1.onrender.com/api/reclamos");
+      const data = await res.json();
+      const contenedor = document.getElementById("reclamos-lista");
+      contenedor.innerHTML = "";
+
+      data.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "p-4 border rounded shadow";
+
+        card.innerHTML = `
+          <p><strong>Tipo:</strong> ${r.tipo}</p>
+          <p><strong>Descripción:</strong> ${r.descripcion}</p>
+          <p><strong>Ubicación:</strong> ${r.ubicacion}</p>
+          <p><strong>Fecha:</strong> ${new Date(r.fecha).toLocaleString()}</p>
+          <p><strong>Estado:</strong> 
+            <select onchange="actualizarEstado('${r.id}', this.value)" class="ml-2 border px-2 py-1 rounded">
+              <option value="pendiente" ${r.estado === 'pendiente' ? 'selected' : ''}>🔴 Pendiente</option>
+              <option value="en proceso" ${r.estado === 'en proceso' ? 'selected' : ''}>🟠 En proceso</option>
+              <option value="resuelto" ${r.estado === 'resuelto' ? 'selected' : ''}>🟢 Resuelto</option>
+            </select>
+          </p>
+        `;
+        contenedor.appendChild(card);
+      });
+    }
+
+    async function actualizarEstado(id, estado) {
+      await fetch(`https://siresu1.onrender.com/api/reclamos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado })
+      });
+      alert("✅ Estado actualizado.");
+      cargarReclamos();
+    }
+
+    window.onload = cargarReclamos;
+  </script>
 </body>
 </html>
