@@ -1,37 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin - Gestión de Reclamos</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
-    <h1 class="text-2xl font-bold mb-4 text-center">🔒 Panel Administrativo</h1>
+<body class="bg-gray-100">
+  <div class="max-w-5xl mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">🔒 Panel Administrativo</h1>
+      <button onclick="cerrarSesion()" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Cerrar sesión</button>
+    </div>
 
+    <!-- Crear Usuario -->
     <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-2">📋 Crear Usuario</h2>
-      <form id="usuario-form" class="space-y-3">
-        <input type="email" id="nuevo-correo" required placeholder="Correo electrónico" class="w-full p-2 border rounded">
-        <input type="password" id="nuevo-password" required placeholder="Contraseña" class="w-full p-2 border rounded">
-        <select id="nuevo-rol" required class="w-full p-2 border rounded">
+      <h2 class="text-lg font-semibold mb-2">➕ Crear Usuario</h2>
+      <form id="usuario-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <input type="email" id="nuevo-correo" required placeholder="Correo" class="p-2 border rounded">
+        <input type="password" id="nuevo-password" required placeholder="Contraseña" class="p-2 border rounded">
+        <select id="nuevo-rol" required class="p-2 border rounded">
           <option value="">Seleccionar rol</option>
           <option value="cliente">Cliente</option>
           <option value="admin">Administrador</option>
         </select>
-        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">➕ Crear Usuario</button>
+        <button type="submit" class="md:col-span-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Crear Usuario</button>
       </form>
     </section>
 
-    <section>
-      <h2 class="text-xl font-semibold mb-4">🗂️ Lista de Reclamos</h2>
-      <div id="reclamos-lista" class="space-y-4"></div>
-    </section>
+    <!-- Filtros -->
+    <div class="flex gap-4 mb-4">
+      <select id="filtro-tipo" class="border p-2 rounded">
+        <option value="">Todos los tipos</option>
+        <option value="Basura">Basura</option>
+        <option value="Alumbrado">Alumbrado</option>
+        <option value="Bache">Bache</option>
+        <option value="Inseguridad">Inseguridad</option>
+        <option value="Otro">Otro</option>
+      </select>
+      <select id="filtro-estado" class="border p-2 rounded">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">🔴 Pendiente</option>
+        <option value="en proceso">🟠 En proceso</option>
+        <option value="resuelto">🟢 Resuelto</option>
+      </select>
+      <button onclick="exportarCSV()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">⬇️ Exportar CSV</button>
+    </div>
+
+    <!-- Lista de Reclamos -->
+    <div id="reclamos-lista" class="space-y-4"></div>
   </div>
 
   <script>
-    // Crear usuario
+    let reclamos = [];
+
     document.getElementById("usuario-form").addEventListener("submit", async function (e) {
       e.preventDefault();
       const correo = document.getElementById("nuevo-correo").value;
@@ -41,33 +63,45 @@
       const res = await fetch("https://siresu1.onrender.com/api/crear_usuario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: correo, password, rol })
+        body: JSON.stringify({ correo, password, rol })
       });
 
       if (res.ok) {
-        alert("✅ Usuario creado correctamente.");
+        alert("✅ Usuario creado correctamente");
         this.reset();
       } else {
-        alert("❌ Error al crear el usuario.");
+        alert("❌ Error al crear usuario");
       }
     });
 
-    // Cargar reclamos
+    document.getElementById("filtro-tipo").addEventListener("change", renderizarReclamos);
+    document.getElementById("filtro-estado").addEventListener("change", renderizarReclamos);
+
     async function cargarReclamos() {
       const res = await fetch("https://siresu1.onrender.com/api/reclamos");
-      const data = await res.json();
+      reclamos = await res.json();
+      renderizarReclamos();
+    }
+
+    function renderizarReclamos() {
+      const tipo = document.getElementById("filtro-tipo").value;
+      const estado = document.getElementById("filtro-estado").value;
       const contenedor = document.getElementById("reclamos-lista");
       contenedor.innerHTML = "";
 
-      data.forEach(r => {
-        const card = document.createElement("div");
-        card.className = "p-4 border rounded shadow";
+      const filtrados = reclamos.filter(r =>
+        (!tipo || r.tipo === tipo) && (!estado || r.estado === estado)
+      );
 
+      filtrados.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "p-4 border rounded shadow bg-gray-50";
         card.innerHTML = `
           <p><strong>Tipo:</strong> ${r.tipo}</p>
           <p><strong>Descripción:</strong> ${r.descripcion}</p>
           <p><strong>Ubicación:</strong> ${r.ubicacion}</p>
-          <p><strong>Fecha:</strong> ${new Date(r.fecha).toLocaleString()}</p>
+          <p><strong>Correo:</strong> ${r.correo || "No proporcionado"}</p>
+          <p><strong>Fecha:</strong> ${new Date(r.fecha_hora).toLocaleString()}</p>
           <p><strong>Estado:</strong> 
             <select onchange="actualizarEstado('${r.id}', this.value)" class="ml-2 border px-2 py-1 rounded">
               <option value="pendiente" ${r.estado === 'pendiente' ? 'selected' : ''}>🔴 Pendiente</option>
@@ -88,6 +122,25 @@
       });
       alert("✅ Estado actualizado.");
       cargarReclamos();
+    }
+
+    function exportarCSV() {
+      let csv = "Tipo,Descripción,Ubicación,Correo,Estado,Fecha\n";
+      reclamos.forEach(r => {
+        csv += `"${r.tipo}","${r.descripcion}","${r.ubicacion}","${r.correo}","${r.estado}","${r.fecha_hora}"\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "reclamos.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function cerrarSesion() {
+      window.location.href = "index.html";
     }
 
     window.onload = cargarReclamos;

@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify, redirect, url_for
 from flask_cors import CORS
-from firebase_config import db
+from firebase_config import firestore_db
 from flask_dance.contrib.google import make_google_blueprint, google
 import os
 import re
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -37,11 +38,10 @@ def register():
 
     if not correo_valido(username):
         return jsonify({"message": "Correo inválido"}), 400
-
     if not contraseña_valida(password):
         return jsonify({"message": "La contraseña debe tener al menos 8 caracteres"}), 400
 
-    user_ref = db.collection("users").document(username)
+    user_ref = firestore_db.collection("users").document(username)
     if user_ref.get().exists:
         return jsonify({"message": "Usuario ya existe"}), 400
 
@@ -60,11 +60,10 @@ def login():
 
     if not correo_valido(username):
         return jsonify({"message": "Correo inválido"}), 400
-
     if not contraseña_valida(password):
         return jsonify({"message": "Contraseña inválida"}), 400
 
-    user_ref = db.collection("users").document(username)
+    user_ref = firestore_db.collection("users").document(username)
     user_doc = user_ref.get()
     if not user_doc.exists:
         return jsonify({"message": "Usuario no encontrado"}), 404
@@ -92,9 +91,9 @@ def google_login():
     email = info.get("email")
 
     if not correo_valido(email):
-        return jsonify({"message": "Correo de Google inválido"}), 400
+        return jsonify({"message": "Correo inválido"}), 400
 
-    user_ref = db.collection("users").document(email)
+    user_ref = firestore_db.collection("users").document(email)
     user_doc = user_ref.get()
 
     if not user_doc.exists:
@@ -106,10 +105,82 @@ def google_login():
     else:
         role = user_doc.to_dict().get("role", "cliente")
 
-    # Redirigir según rol
     if role == "admin":
         return redirect("https://siresu1.vercel.app/admin.html")
-    return redirect("https://siresu1.vercel.app/cliente.html")
+    else:
+        return redirect("https://siresu1.vercel.app/cliente.html")
+
+
+@app.route("/reclamos", methods=["POST"])
+def crear_reclamo():
+    data = request.json
+    if not data:
+        return jsonify({"error": "Datos no proporcionados"}), 400
+
+    try:
+        firestore_db.collection("reclamos").add({
+            "tipo": data.get("tipo"),
+            "descripcion": data.get("descripcion"),
+            "ubicacion": data.get("ubicacion"),
+            "correo": data.get("correo", ""),
+            "estado": "Pendiente",
+            "fecha": datetime.now().isoformat()
+        })
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/crear_usuario", methods=["POST"])
+def crear_usuario():
+    data = request.json
+    if not data:
+        return jsonify({"error": "Datos no proporcionados"}), 400
+
+    correo = data.get("username")
+    password = data.get("password")
+    rol = data.get("rol", "cliente")
+
+    if not correo or not password or not correo_valido(correo) or not contraseña_valida(password):
+        return jsonify({"error": "Datos inválidos"}), 400
+
+    try:
+        user_ref = firestore_db.collection("users").document(correo)
+        if user_ref.get().exists:
+            return jsonify({"error": "El usuario ya existe"}), 400
+        user_ref.set({"password": password, "role": rol})
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/reclamos", methods=["GET"])
+def obtener_reclamos():
+    try:
+        reclamos = firestore_db.collection("reclamos").stream()
+        resultado = []
+        for r in reclamos:
+            data = r.to_dict()
+            data["id"] = r.id
+            resultado.append(data)
+        return jsonify(resultado)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/reclamos/<id>", methods=["PATCH"])
+def actualizar_reclamo(id):
+    data = request.get_json()
+    estado = data.get("estado")
+
+    if estado not in ["pendiente", "en proceso", "resuelto"]:
+        return jsonify({"error": "Estado inválido"}), 400
+
+    try:
+        firestore_db.collection("reclamos").document(id).update({"estado": estado})
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

@@ -1,19 +1,17 @@
 import os
-import json
 import base64
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Cargar clave desde variable de entorno codificada en base64
-FIREBASE_KEY_BASE64 = os.getenv("FIREBASE_KEY_BASE64")
-if not FIREBASE_KEY_BASE64:
+# Leer y decodificar la clave base64
+key_base64 = os.getenv("FIREBASE_KEY_BASE64")
+if not key_base64:
     raise Exception("❌ Variable de entorno FIREBASE_KEY_BASE64 no configurada")
 
-# Decodificar y cargar credenciales
-firebase_key_json = base64.b64decode(FIREBASE_KEY_BASE64).decode("utf-8")
-cred_dict = json.loads(firebase_key_json)
+firebase_json = base64.b64decode(key_base64).decode("utf-8")
 
-cred = credentials.Certificate(cred_dict)
+# Inicializar la app Firebase con credenciales
+cred = credentials.Certificate(eval(firebase_json))
 firebase_admin.initialize_app(cred)
 
-db = firestore.client()
+firestore_db = firestore.client()
