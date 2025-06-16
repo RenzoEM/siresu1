@@ -16,22 +16,16 @@ if (loginForm) {
         body: JSON.stringify({ username, password }),
       });
 
-      const text = await res.text();
-      const data = JSON.parse(text);
-
+      const data = await res.json();
       if (res.ok) {
         alert("¡Login exitoso!");
-        if (data.role === "admin") {
-          window.location.href = "admin.html";
-        } else {
-          window.location.href = "cliente.html";
-        }
+        window.location.href = data.role === "admin" ? "admin.html" : "cliente.html";
       } else {
-        alert(data.message || "Credenciales incorrectas");
+        alert(data.message || "Error al iniciar sesión");
       }
     } catch (error) {
+      console.error("Error en login:", error);
       alert("Error de conexión con el servidor");
-      console.error("Error al hacer login:", error);
     }
   });
 }
@@ -52,15 +46,7 @@ if (registerForm) {
         body: JSON.stringify({ username, password }),
       });
 
-      const text = await res.text();
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error("Respuesta no válida del servidor");
-      }
-
+      const data = await res.json();
       if (res.ok) {
         alert("¡Registro exitoso!");
         window.location.href = "index.html";
@@ -68,8 +54,8 @@ if (registerForm) {
         alert(data.message || "Error al registrar");
       }
     } catch (error) {
-      alert("Error de conexión con el servidor");
       console.error("Error en registro:", error);
+      alert("Error de conexión con el servidor");
     }
   });
 }
