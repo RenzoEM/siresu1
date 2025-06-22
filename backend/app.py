@@ -6,6 +6,7 @@ import os
 import re
 from dotenv import load_dotenv
 from datetime import datetime
+import logging
 
 load_dotenv()
 
@@ -148,7 +149,7 @@ def crear_usuario():
         return jsonify({"error": "Rol inválido"}), 400
 
     try:
-        user_ref = db.collection("users").document(correo)
+        user_ref = firestore_db.collection("users").document(correo)
         if user_ref.get().exists:
             return jsonify({"error": "El usuario ya existe"}), 400
 
