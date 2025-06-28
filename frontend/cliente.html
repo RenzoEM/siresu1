@@ -5,109 +5,143 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cliente - Reportes Ciudadanos</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
+  <div class="max-w-4xl mx-auto p-6 bg-white shadow-xl mt-6 rounded-xl">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-blue-700">📍 Sistema de Reportes Ciudadanos</h1>
+      <button onclick="cerrarSesion()" class="text-red-600 font-bold">🚪 Cerrar sesión</button>
+    </div>
 
-  <div class="max-w-3xl mx-auto p-6 bg-white shadow-xl mt-8 rounded-xl">
-    <h1 class="text-3xl font-bold text-center text-blue-700 mb-6">📍 Sistema de Reportes Ciudadanos</h1>
-
-    <form id="form-reclamo" class="space-y-4">
+    <form id="form-reclamo" class="space-y-4 mt-6">
       <div>
-        <label class="block text-sm font-medium text-gray-700">👤 Nombre (opcional):</label>
-        <input type="text" id="nombre" class="w-full border p-2 rounded" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">📂 Tipo de reclamo:</label>
-        <select id="tipo" required class="w-full border p-2 rounded">
+        <label class="block">📂 Tipo de reclamo:</label>
+        <select id="tipo" required class="w-full p-2 border rounded">
           <option value="">Seleccione</option>
-          <option value="Basura">Basura</option>
-          <option value="Alumbrado">Alumbrado</option>
-          <option value="Bache">Bache</option>
-          <option value="Inseguridad">Inseguridad</option>
-          <option value="Otro">Otro</option>
+          <option>Basura</option>
+          <option>Alumbrado</option>
+          <option>Bache</option>
+          <option>Inseguridad</option>
+          <option>Otro</option>
         </select>
       </div>
-
       <div>
-        <label class="block text-sm font-medium text-gray-700">📝 Descripción:</label>
-        <textarea id="descripcion" required class="w-full border p-2 rounded"></textarea>
+        <label class="block">📝 Descripción:</label>
+        <textarea id="descripcion" required class="w-full p-2 border rounded"></textarea>
       </div>
-
       <div>
-        <label class="block text-sm font-medium text-gray-700">📍 Ubicación (detectada automáticamente):</label>
-        <input type="text" id="ubicacion" class="w-full border p-2 rounded" readonly />
-        <div id="map" class="mt-2 h-60 w-full rounded"></div>
+        <label class="block">📍 Ubicación:</label>
+        <input type="text" id="ubicacion" readonly class="w-full p-2 border rounded bg-gray-100" />
+        <button type="button" onclick="detectarUbicacion()" class="mt-2 bg-blue-600 text-white px-4 py-1 rounded">📡 Detectar ubicación</button>
+        <div id="mapa" class="h-64 mt-2 hidden"></div>
       </div>
-
       <div>
-        <label class="block text-sm font-medium text-gray-700">📧 Correo (opcional):</label>
-        <input type="email" id="correo" class="w-full border p-2 rounded" />
+        <label class="block">📧 Correo (opcional):</label>
+        <input type="email" id="correo" class="w-full p-2 border rounded" />
       </div>
-
-      <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700">📤 Enviar Reclamo</button>
+      <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">📤 Enviar Reclamo</button>
     </form>
-  </div>
 
-  <!-- 🤖 Chatbot básico -->
-  <div id="chatbot" class="fixed bottom-5 right-5 bg-white border border-gray-300 rounded-xl shadow-xl p-4 max-w-xs z-50">
-    <div class="flex justify-between items-center">
-      <h3 class="text-sm font-bold">🤖 Asistente</h3>
-      <button onclick="document.getElementById('chatbot').style.display='none'">❌</button>
-    </div>
-    <div class="text-sm mt-2">
-      <p>¿Necesitas ayuda?</p>
-      <ul class="list-disc ml-4 mt-1">
-        <li>Elige tipo de reclamo</li>
-        <li>Detecta tu ubicación</li>
-        <li>Ingresa correo (opcional)</li>
-      </ul>
-    </div>
+    <hr class="my-8" />
+
+    <h2 class="text-xl font-semibold mb-4">📄 Historial de mis Reclamos</h2>
+    <div id="historial" class="mt-4 space-y-4"></div>
   </div>
 
   <script>
-    // Geolocalización + mapa Leaflet
-    let map = L.map('map').setView([-12.0464, -77.0428], 13); // Por defecto Lima
+    let coords = null;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    function cerrarSesion() {
+      window.location.href = "index.html";
+    }
 
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      const { latitude, longitude } = pos.coords;
-      const marker = L.marker([latitude, longitude]).addTo(map);
-      map.setView([latitude, longitude], 15);
-      document.getElementById('ubicacion').value = `${latitude}, ${longitude}`;
-    }, function(err) {
-      console.warn("Ubicación no disponible", err);
-    });
+    async function detectarUbicacion() {
+      if (!navigator.geolocation) {
+        alert("La geolocalización no es compatible");
+        return;
+      }
 
-    // Envío del reclamo
-    document.getElementById("form-reclamo").addEventListener("submit", async function (e) {
+      navigator.geolocation.getCurrentPosition(async function(pos) {
+        coords = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude
+        };
+
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        document.getElementById("ubicacion").value = data.display_name;
+
+        document.getElementById("mapa").classList.remove("hidden");
+        const map = L.map('mapa').setView([coords.lat, coords.lon], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.marker([coords.lat, coords.lon]).addTo(map)
+          .bindPopup("Tu ubicación detectada").openPopup();
+      }, function() {
+        alert("No se pudo detectar la ubicación.");
+      });
+    }
+
+    document.getElementById("form-reclamo").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const data = {
-        nombre: document.getElementById("nombre").value,
-        tipo: document.getElementById("tipo").value,
-        descripcion: document.getElementById("descripcion").value,
-        ubicacion: document.getElementById("ubicacion").value,
-        correo: document.getElementById("correo").value
-      };
+
+      const tipo = document.getElementById("tipo").value;
+      const descripcion = document.getElementById("descripcion").value;
+      const ubicacion = document.getElementById("ubicacion").value;
+      const correo = document.getElementById("correo").value;
+
+      localStorage.setItem("correo_cliente", correo); // Guardar correo en localStorage
 
       const res = await fetch("https://siresu1.onrender.com/reclamos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ tipo, descripcion, ubicacion, correo })
       });
 
       if (res.ok) {
-        alert("✅ Reclamo enviado correctamente");
+        alert("✅ Reclamo enviado");
         this.reset();
+        document.getElementById("mapa").classList.add("hidden");
+        cargarHistorial();
       } else {
-        alert("❌ Error al enviar el reclamo");
+        alert("❌ Error al enviar reclamo");
       }
     });
+
+    async function cargarHistorial() {
+      const correo = localStorage.getItem("correo_cliente");
+      if (!correo || !correo.includes("@")) return;
+
+      const res = await fetch("https://siresu1.onrender.com/api/reclamos");
+      const reclamos = await res.json();
+      const historial = document.getElementById("historial");
+      historial.innerHTML = "";
+
+      const filtrados = reclamos.filter(r => r.correo === correo);
+
+      if (filtrados.length === 0) {
+        historial.innerHTML = "<p>No hay reclamos registrados.</p>";
+        return;
+      }
+
+      filtrados.forEach(r => {
+        const div = document.createElement("div");
+        div.className = "bg-white p-4 border rounded shadow";
+        div.innerHTML = `
+          <p><strong>📂 Tipo:</strong> ${r.tipo}</p>
+          <p><strong>📝 Descripción:</strong> ${r.descripcion}</p>
+          <p><strong>📍 Ubicación:</strong> ${r.ubicacion}</p>
+          <p><strong>📅 Fecha de envío:</strong> ${new Date(r.fecha).toLocaleString()}</p>
+          <p><strong>📌 Estado:</strong> ${r.estado}</p>
+        `;
+        historial.appendChild(div);
+      });
+    }
+
+    window.onload = cargarHistorial;
   </script>
 </body>
 </html>
