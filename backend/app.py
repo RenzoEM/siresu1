@@ -181,35 +181,26 @@ def obtener_reclamos():
 @app.route("/api/reclamos/<id>", methods=["PATCH"])
 def actualizar_reclamo(id):
     data = request.get_json()
-    nuevo_estado = data.get("estado")
+    estado = data.get("estado")
 
-    if nuevo_estado not in ["pendiente", "en proceso", "resuelto"]:
+    if estado not in ["pendiente", "en proceso", "resuelto"]:
         return jsonify({"error": "Estado inválido"}), 400
 
     try:
-        # Actualizar estado del reclamo
         doc_ref = firestore_db.collection("reclamos").document(id)
-        doc = doc_ref.get()
-        if not doc.exists:
-            return jsonify({"error": "Reclamo no encontrado"}), 404
-
-        reclamo = doc.to_dict()
-        correo_cliente = reclamo.get("correo", "")
-        doc_ref.update({"estado": nuevo_estado})
-
-        # Guardar notificación en Firestore
-        if correo_cliente:
-            firestore_db.collection("notificaciones").add({
-                "correo": correo_cliente,
-                "mensaje": f"El estado de tu reclamo fue actualizado a: {nuevo_estado}",
-                "fecha": datetime.now().isoformat()
+        if estado == "resuelto":
+            doc_ref.update({
+                "estado": estado,
+                "fecha_final": datetime.now().isoformat()
             })
-
-
+        else:
+            doc_ref.update({
+                "estado": estado
+            })
         return jsonify({"success": True})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 

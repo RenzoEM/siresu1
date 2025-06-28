@@ -35,7 +35,7 @@
         <label class="block">📍 Ubicación:</label>
         <input type="text" id="ubicacion" readonly class="w-full p-2 border rounded bg-gray-100" />
         <button type="button" onclick="detectarUbicacion()" class="mt-2 bg-blue-600 text-white px-4 py-1 rounded">📡 Detectar ubicación</button>
-        <div id="mapa" class="h-64 mt-2 hidden"></div>
+        <div id="mapa" class="h-64 mt-2 hidden rounded border"></div>
       </div>
       <div>
         <label class="block">📧 Correo (opcional):</label>
@@ -47,45 +47,40 @@
     <hr class="my-8" />
 
     <h2 class="text-xl font-semibold mb-4">📄 Historial de mis Reclamos</h2>
-    <div id="historial" class="mt-4 space-y-4"></div>
+    <div id="historial" class="space-y-4"></div>
   </div>
 
   <script>
     let coords = null;
 
     function cerrarSesion() {
+      localStorage.removeItem("correo_usuario");
       window.location.href = "index.html";
     }
 
-    async function detectarUbicacion() {
+    function detectarUbicacion() {
       if (!navigator.geolocation) {
         alert("La geolocalización no es compatible");
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(async function(pos) {
-        coords = {
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude
-        };
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
 
-        const url = `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json`;
-        const res = await fetch(url);
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json`);
         const data = await res.json();
-
         document.getElementById("ubicacion").value = data.display_name;
 
         document.getElementById("mapa").classList.remove("hidden");
-        const map = L.map('mapa').setView([coords.lat, coords.lon], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.marker([coords.lat, coords.lon]).addTo(map)
-          .bindPopup("Tu ubicación detectada").openPopup();
-      }, function() {
+        const map = L.map("mapa").setView([coords.lat, coords.lon], 16);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+        L.marker([coords.lat, coords.lon]).addTo(map).bindPopup("Tu ubicación detectada").openPopup();
+      }, () => {
         alert("No se pudo detectar la ubicación.");
       });
     }
 
-    document.getElementById("form-reclamo").addEventListener("submit", async function(e) {
+    document.getElementById("form-reclamo").addEventListener("submit", async function (e) {
       e.preventDefault();
 
       const tipo = document.getElementById("tipo").value;
@@ -93,7 +88,7 @@
       const ubicacion = document.getElementById("ubicacion").value;
       const correo = document.getElementById("correo").value;
 
-      localStorage.setItem("correo_cliente", correo); // Guardar correo en localStorage
+      if (correo) localStorage.setItem("correo_usuario", correo);
 
       const res = await fetch("https://siresu1.onrender.com/reclamos", {
         method: "POST",
@@ -112,36 +107,42 @@
     });
 
     async function cargarHistorial() {
-      const correo = localStorage.getItem("correo_cliente");
-      if (!correo || !correo.includes("@")) return;
+      const correo = localStorage.getItem("correo_usuario");
+      if (!correo) return;
 
       const res = await fetch("https://siresu1.onrender.com/api/reclamos");
-      const reclamos = await res.json();
-      const historial = document.getElementById("historial");
-      historial.innerHTML = "";
+      const datos = await res.json();
+      const historial = datos.filter(r => r.correo === correo);
 
-      const filtrados = reclamos.filter(r => r.correo === correo);
+      const contenedor = document.getElementById("historial");
+      contenedor.innerHTML = "";
 
-      if (filtrados.length === 0) {
-        historial.innerHTML = "<p>No hay reclamos registrados.</p>";
+      if (historial.length === 0) {
+        contenedor.innerHTML = "<p class='text-gray-500'>No hay reclamos registrados.</p>";
         return;
       }
 
-      filtrados.forEach(r => {
-        const div = document.createElement("div");
-        div.className = "bg-white p-4 border rounded shadow";
-        div.innerHTML = `
-          <p><strong>📂 Tipo:</strong> ${r.tipo}</p>
-          <p><strong>📝 Descripción:</strong> ${r.descripcion}</p>
-          <p><strong>📍 Ubicación:</strong> ${r.ubicacion}</p>
-          <p><strong>📅 Fecha de envío:</strong> ${new Date(r.fecha).toLocaleString()}</p>
-          <p><strong>📌 Estado:</strong> ${r.estado}</p>
+      historial.forEach(r => {
+        const fecha = r.fecha ? new Date(r.fecha).toLocaleString() : "-";
+        const finalizado = r.estado === "resuelto" && r.fecha_final ? new Date(r.fecha_final).toLocaleString() : "-";
+
+        contenedor.innerHTML += `
+          <div class="p-4 border rounded shadow bg-gray-50">
+            <p><strong>Tipo:</strong> ${r.tipo}</p>
+            <p><strong>Descripción:</strong> ${r.descripcion}</p>
+            <p><strong>Ubicación:</strong> ${r.ubicacion}</p>
+            <p><strong>Estado:</strong> ${r.estado}</p>
+            <p><strong>Fecha de creación:</strong> ${fecha}</p>
+            <p><strong>Fecha de finalización:</strong> ${finalizado}</p>
+          </div>
         `;
-        historial.appendChild(div);
       });
     }
 
-    window.onload = cargarHistorial;
+    window.onload = () => {
+      detectarUbicacion();
+      cargarHistorial();
+    };
   </script>
 </body>
 </html>
