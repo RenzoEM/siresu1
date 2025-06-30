@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Iniciar Sesión - Siresu</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- AOS para animaciones -->
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
   <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <style>
@@ -15,7 +14,7 @@
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen font-sans">
-  <div class="bg-white shadow-xl rounded-lg p-8 max-w-md w-full animate-fade-in" data-aos="zoom-in">
+  <div class="bg-white shadow-xl rounded-lg p-8 max-w-md w-full" data-aos="zoom-in">
     <h2 class="text-3xl font-bold text-center text-blue-800 mb-6">Iniciar Sesión</h2>
 
     <form id="login-form" class="space-y-5" data-aos="fade-up" data-aos-delay="100">
@@ -42,10 +41,32 @@
   </div>
 
   <script>
-    AOS.init({
-      duration: 600,
-      easing: 'ease-in-out',
-      once: true
+    AOS.init();
+
+    document.getElementById("login-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim().toLowerCase();
+      const password = document.getElementById("password").value;
+
+      const res = await fetch("https://siresu1.onrender.com/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("correo_usuario", username);
+        alert("✅ Sesión iniciada");
+        if (data.role === "admin") {
+          window.location.href = "admin.html";
+        } else {
+          window.location.href = "cliente.html";
+        }
+      } else {
+        alert(`❌ ${data.message}`);
+      }
     });
   </script>
 </body>

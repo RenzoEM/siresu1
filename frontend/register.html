@@ -41,12 +41,28 @@
   </div>
 
   <script>
-    AOS.init({
-      duration: 600,
-      easing: 'ease-in-out',
-      once: true
+    AOS.init();
+
+    document.getElementById("register-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim().toLowerCase();
+      const password = document.getElementById("password").value;
+
+      const res = await fetch("https://siresu1.onrender.com/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("✅ Registro exitoso");
+        window.location.href = "index.html";
+      } else {
+        alert(`❌ ${data.message}`);
+      }
     });
   </script>
-  <script src="scripts.js"></script>
 </body>
 </html>
