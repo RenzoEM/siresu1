@@ -3,165 +3,217 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin - Gestión de Reclamos</title>
+  <title>Panel Administrativo</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <style>
+    .tab-content {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .tab-hidden {
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .tab-visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <div class="text-right mb-4 p-4">
-    <button
-      onclick="cerrarSesion()"
-      class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded transform active:scale-95 transition duration-150 ease-in-out"
-    >
-      Cerrar sesión
-    </button>
-  </div>
+  <div class="max-w-6xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+      <h1 class="text-2xl font-bold">Panel Administrativo</h1>
+      <button onclick="cerrarSesion()" class="text-red-600 hover:underline font-medium">Cerrar sesión</button>
+    </div>
 
-  <div
-    class="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md"
-    data-aos="fade-up"
-  >
-    <h1
-      class="text-3xl font-bold mb-6 text-center text-blue-800"
-      data-aos="fade-down"
-      data-aos-delay="100"
-    >
-      Panel Administrativo
-    </h1>
+    <!-- Navegación por pestañas -->
+    <div class="flex space-x-4 border-b mb-6 text-sm font-medium">
+      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-crear')">Agregar Usuario</button>
+      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-usuarios')">Lista de Usuarios</button>
+      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-reclamos')">Lista de Reclamos</button>
+    </div>
 
-    <section class="mb-8" data-aos="fade-up" data-aos-delay="200">
-      <h2 class="text-xl font-semibold mb-4">Crear Usuario</h2>
-      <form id="usuario-form" class="space-y-4">
-        <input
-          type="email"
-          id="nuevo-correo"
-          required
-          placeholder="Correo electrónico"
-          class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="password"
-          id="nuevo-password"
-          required
-          placeholder="Contraseña"
-          class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <select
-          id="nuevo-rol"
-          required
-          class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+    <!-- Contenido por pestañas -->
+    <div id="tab-crear" class="tab-content tab-visible">
+      <h2 class="text-xl font-semibold mb-4">Agregar Nuevo Usuario</h2>
+      <form id="form-crear-usuario" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <input type="email" id="nuevo-correo" required placeholder="Correo electrónico" class="p-2 border rounded" />
+        <input type="password" id="nuevo-password" required placeholder="Contraseña" class="p-2 border rounded" />
+        <select id="nuevo-rol" required class="p-2 border rounded">
           <option value="">Seleccionar rol</option>
           <option value="cliente">Cliente</option>
           <option value="admin">Administrador</option>
         </select>
-        <button
-          type="submit"
-          class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transform active:scale-95 transition duration-150 ease-in-out"
-        >
-          Crear Usuario
-        </button>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded col-span-full md:col-span-1">Crear Usuario</button>
       </form>
-    </section>
+    </div>
 
-    <section data-aos="fade-up" data-aos-delay="300">
+    <div id="tab-usuarios" class="tab-content tab-hidden">
+      <h2 class="text-xl font-semibold mb-4">Lista de Usuarios</h2>
+      <div id="usuarios-lista" class="space-y-4"></div>
+    </div>
+
+    <div id="tab-reclamos" class="tab-content tab-hidden">
       <h2 class="text-xl font-semibold mb-4">Lista de Reclamos</h2>
       <div id="reclamos-lista" class="space-y-4"></div>
-    </section>
+    </div>
   </div>
 
-  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script>
-    AOS.init({ duration: 700, once: true });
+    const API = "https://siresu1.onrender.com";
 
     function cerrarSesion() {
+      localStorage.removeItem("correo_usuario");
       window.location.href = "index.html";
     }
 
+    // Tabs con animación
+    function cambiarTab(idActiva) {
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.remove('tab-visible');
+        el.classList.add('tab-hidden');
+      });
+
+      document.getElementById(idActiva).classList.remove('tab-hidden');
+      document.getElementById(idActiva).classList.add('tab-visible');
+
+      document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('border-blue-600'));
+      const index = {
+        'tab-crear': 0,
+        'tab-usuarios': 1,
+        'tab-reclamos': 2
+      }[idActiva];
+      document.querySelectorAll('.tab-link')[index].classList.add('border-blue-600');
+    }
+
     // Crear usuario
-    document.getElementById("usuario-form").addEventListener("submit", async function (e) {
+    document.getElementById("form-crear-usuario").addEventListener("submit", async function (e) {
       e.preventDefault();
-      const correo = document.getElementById("nuevo-correo").value;
+      const correo = document.getElementById("nuevo-correo").value.trim().toLowerCase();
       const password = document.getElementById("nuevo-password").value;
       const rol = document.getElementById("nuevo-rol").value;
 
-      try {
-        const res = await fetch("https://siresu1.onrender.com/crear-usuario", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ correo, password, rol }),
-        });
+      const res = await fetch(`${API}/crear-usuario`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ correo, password, rol })
+      });
 
-        if (res.ok) {
-          alert("Usuario creado correctamente.");
-          this.reset();
-          cargarReclamos();
-        } else {
-          alert("Error al crear el usuario.");
-        }
-      } catch (error) {
-        alert("Error de red o servidor.");
+      if (res.ok) {
+        alert("Usuario creado correctamente.");
+        this.reset();
+        cargarUsuarios();
+        cambiarTab('tab-usuarios');
+      } else {
+        const data = await res.json();
+        alert("Error: " + (data.error || "No se pudo crear el usuario."));
       }
     });
 
-    // Cargar reclamos
-    async function cargarReclamos() {
-      try {
-        const res = await fetch("https://siresu1.onrender.com/api/reclamos");
-        const data = await res.json();
-        const contenedor = document.getElementById("reclamos-lista");
-        contenedor.innerHTML = "";
+    async function cargarUsuarios() {
+      const res = await fetch(`${API}/usuarios`);
+      const data = await res.json();
+      const contenedor = document.getElementById("usuarios-lista");
+      contenedor.innerHTML = "";
 
-        data.forEach((r) => {
-          const card = document.createElement("div");
-          card.className =
-            "p-4 border rounded shadow bg-white transition transform hover:scale-[1.01] duration-200 ease-in-out";
+      data.forEach(user => {
+        const card = document.createElement("div");
+        card.className = "p-4 border rounded bg-gray-50 shadow";
 
-          const fecha = new Date(r.fecha).toLocaleString();
+        card.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <label><strong>Correo:</strong> <input id="correo-${user.id}" value="${user.id}" class="p-1 border rounded w-full" /></label>
+            <label><strong>Contraseña:</strong> <input id="pass-${user.id}" value="${user.password}" class="p-1 border rounded w-full" /></label>
+          </div>
+          <p class="mt-2"><strong>Rol:</strong> ${user.role}</p>
+          <div class="mt-2 flex space-x-2">
+            <button onclick="actualizarUsuario('${user.id}')" class="bg-blue-600 text-white px-3 py-1 rounded">Actualizar</button>
+            <button onclick="eliminarUsuario('${user.id}')" class="bg-red-600 text-white px-3 py-1 rounded">Eliminar</button>
+          </div>
+        `;
+        contenedor.appendChild(card);
+      });
+    }
 
-          card.innerHTML = `
-            <p><strong>Tipo:</strong> ${r.tipo}</p>
-            <p><strong>Descripción:</strong> ${r.descripcion}</p>
-            <p><strong>Ubicación:</strong> ${r.ubicacion}</p>
-            <p><strong>Correo:</strong> ${r.correo || "No proporcionado"}</p>
-            <p><strong>Fecha:</strong> ${fecha}</p>
-            <p><strong>Estado:</strong> 
-              <select onchange="actualizarEstado('${r.id}', this.value)" class="ml-2 border px-2 py-1 rounded">
-                <option value="pendiente" ${
-                  r.estado === "pendiente" ? "selected" : ""
-                }>Pendiente</option>
-                <option value="en proceso" ${
-                  r.estado === "en proceso" ? "selected" : ""
-                }>En proceso</option>
-                <option value="resuelto" ${
-                  r.estado === "resuelto" ? "selected" : ""
-                }>Resuelto</option>
-              </select>
-            </p>
-          `;
-          contenedor.appendChild(card);
-        });
-      } catch (error) {
-        alert("Error al cargar reclamos.");
+    async function actualizarUsuario(id) {
+      const nuevoCorreo = document.getElementById(`correo-${id}`).value.trim();
+      const nuevaPassword = document.getElementById(`pass-${id}`).value.trim();
+
+      const res = await fetch(`${API}/usuarios/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nuevoCorreo, nuevaPassword })
+      });
+
+      if (res.ok) {
+        alert("Usuario actualizado.");
+        cargarUsuarios();
+      } else {
+        alert("Error al actualizar el usuario.");
       }
+    }
+
+    async function eliminarUsuario(id) {
+      if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
+
+      const res = await fetch(`${API}/usuarios/${id}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        alert("Usuario eliminado.");
+        cargarUsuarios();
+      } else {
+        alert("Error al eliminar el usuario.");
+      }
+    }
+
+    async function cargarReclamos() {
+      const res = await fetch(`${API}/api/reclamos`);
+      const data = await res.json();
+      const contenedor = document.getElementById("reclamos-lista");
+      contenedor.innerHTML = "";
+
+      data.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "p-4 border rounded bg-white shadow";
+
+        card.innerHTML = `
+          <p><strong>Tipo:</strong> ${r.tipo}</p>
+          <p><strong>Descripción:</strong> ${r.descripcion}</p>
+          <p><strong>Ubicación:</strong> ${r.ubicacion}</p>
+          <p><strong>Correo:</strong> ${r.correo}</p>
+          <p><strong>Fecha:</strong> ${new Date(r.fecha).toLocaleString()}</p>
+          <p><strong>Estado:</strong>
+            <select onchange="actualizarEstado('${r.id}', this.value)" class="ml-2 border px-2 py-1 rounded">
+              <option value="pendiente" ${r.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+              <option value="en proceso" ${r.estado === 'en proceso' ? 'selected' : ''}>En proceso</option>
+              <option value="resuelto" ${r.estado === 'resuelto' ? 'selected' : ''}>Resuelto</option>
+            </select>
+          </p>
+        `;
+        contenedor.appendChild(card);
+      });
     }
 
     async function actualizarEstado(id, estado) {
-      try {
-        await fetch(`https://siresu1.onrender.com/api/reclamos/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ estado }),
-        });
-        alert("Estado actualizado y cliente notificado.");
-        cargarReclamos();
-      } catch (error) {
-        alert("Error al actualizar estado.");
-      }
+      await fetch(`${API}/api/reclamos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado })
+      });
+      alert("Estado actualizado.");
+      cargarReclamos();
     }
 
-    window.onload = cargarReclamos;
+    window.onload = () => {
+      cargarUsuarios();
+      cargarReclamos();
+      cambiarTab('tab-crear'); // Mostrar por defecto
+    };
   </script>
 </body>
 </html>

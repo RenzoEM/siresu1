@@ -6,7 +6,6 @@ import os
 import re
 from dotenv import load_dotenv
 from datetime import datetime
-import logging
 
 load_dotenv()
 
@@ -22,7 +21,6 @@ google_bp = make_google_blueprint(
     redirect_url="/login/google/authorized"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
-
 
 
 def correo_valido(email):
@@ -163,7 +161,6 @@ def crear_usuario():
         return jsonify({"error": f"Error al crear usuario: {str(e)}"}), 500
 
 
-
 @app.route("/api/reclamos", methods=["GET"])
 def obtener_reclamos():
     try:
@@ -202,6 +199,50 @@ def actualizar_reclamo(id):
         return jsonify({"error": str(e)}), 500
 
 
+# NUEVOS ENDPOINTS DE USUARIOS
+
+@app.route("/usuarios", methods=["GET"])
+def listar_usuarios():
+    usuarios = firestore_db.collection("users").stream()
+    lista = []
+    for u in usuarios:
+        data = u.to_dict()
+        data["id"] = u.id
+        lista.append(data)
+    return jsonify(lista)
+
+
+@app.route("/usuarios/<correo>", methods=["PATCH"])
+def actualizar_usuario(correo):
+    data = request.get_json()
+    nuevo_correo = data.get("nuevoCorreo")
+    nueva_pass = data.get("nuevaPassword")
+
+    ref = firestore_db.collection("users").document(correo)
+    if not ref.get().exists:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    if nuevo_correo and nuevo_correo != correo:
+        datos = ref.get().to_dict()
+        firestore_db.collection("users").document(nuevo_correo).set({
+            "password": nueva_pass or datos.get("password"),
+            "role": datos.get("role")
+        })
+        ref.delete()
+    else:
+        if nueva_pass:
+            ref.update({"password": nueva_pass})
+
+    return jsonify({"message": "Usuario actualizado"})
+
+
+@app.route("/usuarios/<correo>", methods=["DELETE"])
+def eliminar_usuario(correo):
+    ref = firestore_db.collection("users").document(correo)
+    if ref.get().exists:
+        ref.delete()
+        return jsonify({"message": "Eliminado"})
+    return jsonify({"error": "Usuario no encontrado"}), 404
 
 
 if __name__ == "__main__":
