@@ -219,35 +219,32 @@ def listar_usuarios():
 @app.route("/usuarios/<correo>", methods=["PATCH"])
 def actualizar_usuario(correo):
     data = request.get_json()
-    nuevo_correo = data.get("nuevoCorreo")
-    nueva_pass = data.get("nuevaPassword")
+    nuevo_correo = data.get("correo")
+    password = data.get("password")
+    rol = data.get("rol")
 
-    ref = firestore_db.collection("users").document(correo)
-    if not ref.get().exists:
-        return jsonify({"error": "Usuario no encontrado"}), 404
-
-    if nuevo_correo and nuevo_correo != correo:
-        datos = ref.get().to_dict()
+    try:
+        # Eliminar antiguo y crear nuevo si cambia el correo
+        if nuevo_correo != correo:
+            firestore_db.collection("users").document(correo).delete()
         firestore_db.collection("users").document(nuevo_correo).set({
-            "password": nueva_pass or datos.get("password"),
-            "role": datos.get("role")
+            "password": password,
+            "role": rol
         })
-        ref.delete()
-    else:
-        if nueva_pass:
-            ref.update({"password": nueva_pass})
-
-    return jsonify({"message": "Usuario actualizado"})
-
+        return jsonify({"message": "Actualizado"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/usuarios/<correo>", methods=["DELETE"])
 def eliminar_usuario(correo):
-    ref = firestore_db.collection("users").document(correo)
-    if ref.get().exists:
-        ref.delete()
-        return jsonify({"message": "Eliminado"})
-    return jsonify({"error": "Usuario no encontrado"}), 404
+    try:
+        firestore_db.collection("users").document(correo).delete()
 
+        # Eliminar reclamos del usuario
+        reclamos = firestore_db.collection("reclamos").where("correo", "==", correo).stream()
+        for r in reclamos:
+            firestore_db.collection("reclamos").document(r.id).delete()
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+        return jsonify({"message": "Usuario y reclamos eliminados"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

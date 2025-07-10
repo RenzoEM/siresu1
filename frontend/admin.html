@@ -22,18 +22,17 @@
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-
   <div class="max-w-6xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
     <div class="flex justify-between items-center border-b pb-4 mb-6">
-      <h1 class="text-2xl font-bold">Panel Administrativo</h1>
-      <button onclick="cerrarSesion()" class="text-red-600 hover:underline font-medium">Cerrar sesión</button>
+      <h1 class="text-2xl font-bold text-blue-700">🛠️ Panel Administrativo</h1>
+      <button onclick="cerrarSesion()" class="bg-red-600 text-white px-4 py-2 rounded">Cerrar sesión</button>
     </div>
 
     <!-- Navegación por pestañas -->
     <div class="flex space-x-4 border-b mb-6 text-sm font-medium">
-      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-crear')">Agregar Usuario</button>
-      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-usuarios')">Lista de Usuarios</button>
-      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-reclamos')">Lista de Reclamos</button>
+      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-crear')">➕ Agregar Usuario</button>
+      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-usuarios')">👥 Lista de Usuarios</button>
+      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-reclamos')">📋 Lista de Reclamos</button>
     </div>
 
     <!-- Contenido por pestañas -->
@@ -70,7 +69,6 @@
       window.location.href = "index.html";
     }
 
-    // Tabs con animación
     function cambiarTab(idActiva) {
       document.querySelectorAll('.tab-content').forEach(el => {
         el.classList.remove('tab-visible');
@@ -89,7 +87,6 @@
       document.querySelectorAll('.tab-link')[index].classList.add('border-blue-600');
     }
 
-    // Crear usuario
     document.getElementById("form-crear-usuario").addEventListener("submit", async function (e) {
       e.preventDefault();
       const correo = document.getElementById("nuevo-correo").value.trim().toLowerCase();
@@ -103,13 +100,13 @@
       });
 
       if (res.ok) {
-        alert("Usuario creado correctamente.");
+        alert("✅ Usuario creado correctamente.");
         this.reset();
         cargarUsuarios();
         cambiarTab('tab-usuarios');
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || "No se pudo crear el usuario."));
+        alert("❌ Error: " + (data.error || "No se pudo crear el usuario."));
       }
     });
 
@@ -120,53 +117,70 @@
       contenedor.innerHTML = "";
 
       data.forEach(user => {
-  const card = document.createElement("div");
-  card.className = "p-4 border rounded shadow bg-gray-50";
+        const card = document.createElement("div");
+        card.className = "p-4 border rounded shadow bg-gray-50";
 
-  card.innerHTML = `
-    <p><strong>Correo:</strong> <input id="correo-${user.id}" value="${user.id}" class="p-1 border rounded w-full md:w-80" /></p>
-    <p><strong>Contraseña:</strong> <input id="pass-${user.id}" value="${user.password}" class="p-1 border rounded w-full md:w-80" /></p>
-    <p><strong>Rol:</strong> ${user.role}</p>
-    <div class="mt-2 space-x-2">
-      <button onclick="actualizarUsuario('${user.id}')" class="bg-blue-600 text-white px-3 py-1 rounded">🔄 Actualizar</button>
-      <button onclick="eliminarUsuario('${user.id}')" class="bg-red-600 text-white px-3 py-1 rounded">❌ Eliminar</button>
-    </div>
-  `;
-  contenedor.appendChild(card);
-});
-
+        card.innerHTML = `
+          <p><strong>Correo:</strong>
+            <input id="correo-${user.id}" value="${user.id}" class="p-1 border rounded w-full md:w-80" disabled />
+          </p>
+          <p><strong>Contraseña:</strong>
+            <input id="pass-${user.id}" value="${user.password}" class="p-1 border rounded w-full md:w-80" disabled />
+          </p>
+          <p><strong>Rol:</strong>
+            <select id="rol-${user.id}" class="p-1 border rounded" disabled>
+              <option value="cliente" ${user.role === "cliente" ? "selected" : ""}>Cliente</option>
+              <option value="admin" ${user.role === "admin" ? "selected" : ""}>Admin</option>
+            </select>
+          </p>
+          <div class="mt-2 space-x-2">
+            <button onclick="habilitarEdicion('${user.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Actualizar</button>
+            <button onclick="guardarUsuario('${user.id}')" id="guardar-${user.id}" class="hidden bg-blue-600 text-white px-3 py-1 rounded">💾 Guardar</button>
+            <button onclick="eliminarUsuario('${user.id}')" class="bg-red-600 text-white px-3 py-1 rounded">🗑️ Eliminar</button>
+          </div>
+        `;
+        contenedor.appendChild(card);
+      });
     }
 
-    async function actualizarUsuario(id) {
-      const nuevoCorreo = document.getElementById(`correo-${id}`).value.trim();
-      const nuevaPassword = document.getElementById(`pass-${id}`).value.trim();
+    function habilitarEdicion(id) {
+      document.getElementById(`correo-${id}`).disabled = false;
+      document.getElementById(`pass-${id}`).disabled = false;
+      document.getElementById(`rol-${id}`).disabled = false;
+      document.getElementById(`guardar-${id}`).classList.remove("hidden");
+    }
 
-      const res = await fetch(`${API}/usuarios/${id}`, {
+    async function guardarUsuario(idAnterior) {
+      const correo = document.getElementById(`correo-${idAnterior}`).value;
+      const password = document.getElementById(`pass-${idAnterior}`).value;
+      const rol = document.getElementById(`rol-${idAnterior}`).value;
+
+      const res = await fetch(`${API}/usuarios/${idAnterior}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nuevoCorreo, nuevaPassword })
+        body: JSON.stringify({ correo, password, rol })
       });
 
       if (res.ok) {
-        alert("Usuario actualizado.");
+        alert("✅ Usuario actualizado");
         cargarUsuarios();
       } else {
-        alert("Error al actualizar el usuario.");
+        alert("❌ Error al actualizar");
       }
     }
 
-    async function eliminarUsuario(id) {
-      if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
+    async function eliminarUsuario(correo) {
+      if (!confirm("¿Seguro que deseas eliminar este usuario y todos sus reclamos?")) return;
 
-      const res = await fetch(`${API}/usuarios/${id}`, {
+      const res = await fetch(`${API}/usuarios/${correo}`, {
         method: "DELETE"
       });
 
       if (res.ok) {
-        alert("Usuario eliminado.");
+        alert("✅ Usuario eliminado");
         cargarUsuarios();
       } else {
-        alert("Error al eliminar el usuario.");
+        alert("❌ Error al eliminar usuario");
       }
     }
 
@@ -204,14 +218,14 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado })
       });
-      alert("Estado actualizado.");
+      alert("✅ Estado actualizado");
       cargarReclamos();
     }
 
     window.onload = () => {
       cargarUsuarios();
       cargarReclamos();
-      cambiarTab('tab-crear'); // Mostrar por defecto
+      cambiarTab('tab-crear');
     };
   </script>
 </body>
