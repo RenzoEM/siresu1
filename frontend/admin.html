@@ -120,22 +120,21 @@
       contenedor.innerHTML = "";
 
       data.forEach(user => {
-        const card = document.createElement("div");
-        card.className = "p-4 border rounded bg-gray-50 shadow";
+  const card = document.createElement("div");
+  card.className = "p-4 border rounded shadow bg-gray-50";
 
-        card.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <label><strong>Correo:</strong> <input id="correo-${user.id}" value="${user.id}" class="p-1 border rounded w-full" /></label>
-            <label><strong>Contraseña:</strong> <input id="pass-${user.id}" value="${user.password}" class="p-1 border rounded w-full" /></label>
-          </div>
-          <p class="mt-2"><strong>Rol:</strong> ${user.role}</p>
-          <div class="mt-2 flex space-x-2">
-            <button onclick="actualizarUsuario('${user.id}')" class="bg-blue-600 text-white px-3 py-1 rounded">Actualizar</button>
-            <button onclick="eliminarUsuario('${user.id}')" class="bg-red-600 text-white px-3 py-1 rounded">Eliminar</button>
-          </div>
-        `;
-        contenedor.appendChild(card);
-      });
+  card.innerHTML = `
+    <p><strong>Correo:</strong> <input id="correo-${user.id}" value="${user.id}" class="p-1 border rounded w-full md:w-80" /></p>
+    <p><strong>Contraseña:</strong> <input id="pass-${user.id}" value="${user.password}" class="p-1 border rounded w-full md:w-80" /></p>
+    <p><strong>Rol:</strong> ${user.role}</p>
+    <div class="mt-2 space-x-2">
+      <button onclick="actualizarUsuario('${user.id}')" class="bg-blue-600 text-white px-3 py-1 rounded">🔄 Actualizar</button>
+      <button onclick="eliminarUsuario('${user.id}')" class="bg-red-600 text-white px-3 py-1 rounded">❌ Eliminar</button>
+    </div>
+  `;
+  contenedor.appendChild(card);
+});
+
     }
 
     async function actualizarUsuario(id) {

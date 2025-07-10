@@ -203,13 +203,17 @@ def actualizar_reclamo(id):
 
 @app.route("/usuarios", methods=["GET"])
 def listar_usuarios():
-    usuarios = firestore_db.collection("users").stream()
-    lista = []
-    for u in usuarios:
-        data = u.to_dict()
-        data["id"] = u.id
-        lista.append(data)
-    return jsonify(lista)
+    try:
+        usuarios = firestore_db.collection("users").stream()
+        lista = []
+        for u in usuarios:
+            data = u.to_dict()
+            data["id"] = u.id  # importante para mostrar correo
+            lista.append(data)
+        return jsonify(lista)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 @app.route("/usuarios/<correo>", methods=["PATCH"])
