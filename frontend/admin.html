@@ -75,24 +75,37 @@
   <div id="reclamos" class="tab-content tab-hidden">
     <h2 class="text-xl font-semibold mb-4">Lista de Reclamos</h2>
 
-    <select id="filtroEstado"
-      class="mb-4 border p-2 rounded"
-      onchange="cargarReclamos()">
-      <option value="">Todos</option>
-      <option value="pendiente">Pendiente</option>
-      <option value="en proceso">En proceso</option>
-      <option value="resuelto">Resuelto</option>
-    </select>
+    <div class="flex gap-4 mb-4">
+  <select id="filtroEstado"
+    class="border p-2 rounded"
+    onchange="cargarReclamos()">
+    <option value="">Todos</option>
+    <option value="pendiente">Pendiente</option>
+    <option value="en proceso">En proceso</option>
+    <option value="resuelto">Resuelto</option>
+  </select>
+
+  <select id="filtroOrden"
+    class="border p-2 rounded"
+    onchange="cargarReclamos()">
+    <option value="reciente" selected>Más recientes</option>
+    <option value="antiguo">Más antiguos</option>
+  </select>
+</div>
+
 
     <table class="w-full border">
       <thead class="bg-gray-200">
-        <tr>
-          <th class="border p-2">Tipo</th>
-          <th class="border p-2">Descripción</th>
-          <th class="border p-2">Correo</th>
-          <th class="border p-2">Estado</th>
-        </tr>
-      </thead>
+  <tr>
+    <th class="border p-2">Tipo</th>
+    <th class="border p-2">Descripción</th>
+    <th class="border p-2">Dirección</th>
+    <th class="border p-2">Correo</th>
+    <th class="border p-2">Estado</th>
+    <th class="border p-2">Fecha (Perú)</th>
+  </tr>
+</thead>
+
       <tbody id="tablaReclamos"></tbody>
     </table>
   </div>
@@ -217,32 +230,54 @@ function verPass(id){
 async function cargarReclamos(){
   const res = await fetch(`${API}/api/reclamos`);
   const data = await res.json();
+
   const filtro = filtroEstado.value;
-  tablaReclamos.innerHTML="";
+  const orden = filtroOrden.value;
 
-  data
-  .filter(r=>!filtro || r.estado===filtro)
-  .forEach(r=>{
+  // 🔹 Filtrar por estado
+  let lista = data.filter(r => !filtro || r.estado === filtro);
+
+  // 🔹 Ordenar por fecha
+  lista.sort((a, b) => {
+    const fa = new Date(a.fecha);
+    const fb = new Date(b.fecha);
+    return orden === "reciente" ? fb - fa : fa - fb;
+  });
+
+  tablaReclamos.innerHTML = "";
+
+  lista.forEach(r => {
     const color =
-      r.estado==="pendiente"?"bg-yellow-100":
-      r.estado==="en proceso"?"bg-blue-100":"bg-green-100";
+      r.estado === "pendiente" ? "bg-yellow-100" :
+      r.estado === "en proceso" ? "bg-blue-100" :
+      "bg-green-100";
 
-    tablaReclamos.innerHTML+=`
-    <tr class="${color}">
-      <td class="border p-2">${r.tipo}</td>
-      <td class="border p-2">${r.descripcion}</td>
-      <td class="border p-2">${r.correo}</td>
-      <td class="border p-2">
-        <select onchange="cambiarEstado('${r.id}',this.value)" class="border p-1 rounded">
-          <option ${r.estado=="pendiente"?"selected":""}>pendiente</option>
-          <option ${r.estado=="en proceso"?"selected":""}>en proceso</option>
-          <option ${r.estado=="resuelto"?"selected":""}>resuelto</option>
-        </select>
-      </td>
-    </tr>`;
+    // 🕒 Fecha en horario de Perú
+    const fechaPeru = new Date(r.fecha).toLocaleString("es-PE", {
+      timeZone: "America/Lima",
+      dateStyle: "short",
+      timeStyle: "short"
+    });
+
+    tablaReclamos.innerHTML += `
+      <tr class="${color}">
+        <td class="border p-2">${r.tipo}</td>
+        <td class="border p-2">${r.descripcion}</td>
+        <td class="border p-2">${r.ubicacion || "-"}</td>
+        <td class="border p-2">${r.correo}</td>
+        <td class="border p-2">
+          <select onchange="cambiarEstado('${r.id}',this.value)"
+            class="border p-1 rounded">
+            <option ${r.estado=="pendiente"?"selected":""}>pendiente</option>
+            <option ${r.estado=="en proceso"?"selected":""}>en proceso</option>
+            <option ${r.estado=="resuelto"?"selected":""}>resuelto</option>
+          </select>
+        </td>
+        <td class="border p-2">${fechaPeru}</td>
+      </tr>
+    `;
   });
 }
-
 async function cambiarEstado(id,estado){
   await fetch(`${API}/api/reclamos/${id}`,{
     method:'PATCH',
