@@ -219,28 +219,23 @@ def listar_usuarios():
 @app.route("/usuarios/<correo>", methods=["PATCH"])
 def actualizar_usuario(correo):
     data = request.get_json()
-    nuevo_correo = data.get("correo", correo).strip()
-    password = data.get("password", "").strip()
-    rol = data.get("rol", "cliente").strip()
+    password = data.get("password")
+    rol = data.get("rol")
+
+    if not password or len(password) < 8:
+        return jsonify({"error": "Contraseña inválida"}), 400
+    if rol not in ["cliente", "admin"]:
+        return jsonify({"error": "Rol inválido"}), 400
 
     try:
         user_ref = firestore_db.collection("users").document(correo)
-        user_doc = user_ref.get()
 
-        if not user_doc.exists:
+        if not user_ref.get().exists:
             return jsonify({"error": "Usuario no encontrado"}), 404
 
-        user_data = user_doc.to_dict()
-
-        # Mantener contraseña si no se cambió
-        nueva_password = password if password else user_data.get("password")
-
-        # Si cambia el correo, eliminar el anterior
-        if nuevo_correo != correo:
-            user_ref.delete()
-
-        firestore_db.collection("users").document(nuevo_correo).set({
-            "password": nueva_password,
+        # 🔥 UPDATE REAL (SIN DELETE)
+        user_ref.update({
+            "password": password,
             "role": rol
         })
 
@@ -248,6 +243,7 @@ def actualizar_usuario(correo):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 @app.route("/usuarios/<correo>", methods=["DELETE"])

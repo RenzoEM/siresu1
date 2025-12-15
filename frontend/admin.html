@@ -5,227 +5,235 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Panel Administrativo</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
-    .tab-content {
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-    .tab-hidden {
-      display: none;
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    .tab-visible {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .tab-content { transition: all .3s ease }
+    .tab-hidden { display:none }
+    .tab-visible { display:block }
   </style>
 </head>
+
 <body class="bg-gray-100 text-gray-800">
-  <div class="max-w-6xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
-    <div class="flex justify-between items-center border-b pb-4 mb-6">
-      <h1 class="text-2xl font-bold text-blue-700">🛠️ Panel Administrativo</h1>
-      <button onclick="cerrarSesion()" class="bg-red-600 text-white px-4 py-2 rounded">Cerrar sesión</button>
-    </div>
 
-    <!-- Navegación por pestañas -->
-    <div class="flex space-x-4 border-b mb-6 text-sm font-medium">
-      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-crear')">➕ Agregar Usuario</button>
-      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-usuarios')">👥 Lista de Usuarios</button>
-      <button class="tab-link py-2 px-4 border-b-2 border-transparent hover:border-blue-600" onclick="cambiarTab('tab-reclamos')">📋 Lista de Reclamos</button>
-    </div>
+<div class="max-w-6xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
 
-    <!-- Contenido por pestañas -->
-    <div id="tab-crear" class="tab-content tab-visible">
-      <h2 class="text-xl font-semibold mb-4">Agregar Nuevo Usuario</h2>
-      <form id="form-crear-usuario" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <input type="email" id="nuevo-correo" required placeholder="Correo electrónico" class="p-2 border rounded" />
-        <input type="password" id="nuevo-password" required placeholder="Contraseña" class="p-2 border rounded" />
-        <select id="nuevo-rol" required class="p-2 border rounded">
-          <option value="">Seleccionar rol</option>
-          <option value="cliente">Cliente</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded col-span-full md:col-span-1">Crear Usuario</button>
-      </form>
-    </div>
-
-    <div id="tab-usuarios" class="tab-content tab-hidden">
-      <h2 class="text-xl font-semibold mb-4">Lista de Usuarios</h2>
-      <div id="usuarios-lista" class="space-y-4"></div>
-    </div>
-
-    <div id="tab-reclamos" class="tab-content tab-hidden">
-      <h2 class="text-xl font-semibold mb-4">Lista de Reclamos</h2>
-      <div id="reclamos-lista" class="space-y-4"></div>
-    </div>
+  <!-- HEADER -->
+  <div class="flex justify-between items-center border-b pb-4 mb-6">
+    <h1 class="text-2xl font-bold text-blue-700">🛠️ Panel Administrativo</h1>
+    <button onclick="cerrarSesion()" class="bg-red-600 text-white px-4 py-2 rounded">
+      Cerrar sesión
+    </button>
   </div>
 
-  <script>
+  <!-- TABS -->
+  <div class="flex space-x-4 border-b mb-6 text-sm font-medium">
+    <button class="tab-link border-b-2 border-blue-600 px-4 py-2"
+      onclick="cambiarTab('crear')">➕ Agregar Usuario</button>
+
+    <button class="tab-link px-4 py-2"
+      onclick="cambiarTab('usuarios')">👥 Lista de Usuarios</button>
+
+    <button class="tab-link px-4 py-2"
+      onclick="cambiarTab('reclamos')">📋 Lista de Reclamos</button>
+  </div>
+
+  <!-- CREAR USUARIO -->
+  <div id="crear" class="tab-content tab-visible">
+    <h2 class="text-xl font-semibold mb-4">Agregar Nuevo Usuario</h2>
+
+    <form id="formCrear" class="grid md:grid-cols-3 gap-4">
+      <input id="nuevoCorreo" type="email" placeholder="Correo" required class="border p-2 rounded">
+      <input id="nuevoPass" type="password" placeholder="Contraseña" required class="border p-2 rounded">
+      <select id="nuevoRol" class="border p-2 rounded">
+        <option value="cliente">Cliente</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button class="bg-blue-600 text-white rounded p-2 col-span-full">
+        Crear Usuario
+      </button>
+    </form>
+  </div>
+
+  <!-- LISTA USUARIOS -->
+  <div id="usuarios" class="tab-content tab-hidden">
+    <h2 class="text-xl font-semibold mb-4">Lista de Usuarios</h2>
+
+    <table class="w-full border">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="border p-2">Correo</th>
+          <th class="border p-2">Contraseña</th>
+          <th class="border p-2">Rol</th>
+          <th class="border p-2">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tablaUsuarios"></tbody>
+    </table>
+  </div>
+
+  <!-- LISTA RECLAMOS -->
+  <div id="reclamos" class="tab-content tab-hidden">
+    <h2 class="text-xl font-semibold mb-4">Lista de Reclamos</h2>
+
+    <table class="w-full border">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="border p-2">Tipo</th>
+          <th class="border p-2">Descripción</th>
+          <th class="border p-2">Correo</th>
+          <th class="border p-2">Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tablaReclamos"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
 const API = "https://siresu1.onrender.com";
 
-function cerrarSesion() {
+/* ==================== SESIÓN ==================== */
+function cerrarSesion(){
   localStorage.clear();
-  window.location.href = "index.html";
+  location.href = "index.html";
 }
 
-function cambiarTab(idActiva) {
-  document.querySelectorAll('.tab-content').forEach(el => {
-    el.classList.remove('tab-visible');
-    el.classList.add('tab-hidden');
-  });
-  document.getElementById(idActiva).classList.remove('tab-hidden');
-  document.getElementById(idActiva).classList.add('tab-visible');
+/* ==================== TABS ==================== */
+function cambiarTab(tab){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('tab-hidden'));
+  document.getElementById(tab).classList.remove('tab-hidden');
 }
 
-// ================= CREAR USUARIO =================
-document.getElementById("form-crear-usuario").addEventListener("submit", async e => {
+/* ==================== CREAR USUARIO ==================== */
+formCrear.onsubmit = async e => {
   e.preventDefault();
 
-  const correo = nuevoCorreo = document.getElementById("nuevo-correo").value.trim().toLowerCase();
-  const password = document.getElementById("nuevo-password").value;
-  const rol = document.getElementById("nuevo-rol").value;
-
-  const res = await fetch(`${API}/crear-usuario`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ correo, password, rol })
+  const res = await fetch(`${API}/crear-usuario`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      correo:nuevoCorreo.value,
+      password:nuevoPass.value,
+      rol:nuevoRol.value
+    })
   });
 
-  const data = await res.json();
-  alert(data.message || data.error);
-  if (res.ok) {
-    e.target.reset();
+  if(res.ok){
+    alert("Usuario creado");
+    formCrear.reset();
     cargarUsuarios();
-    cambiarTab("tab-usuarios");
-  }
-});
+    cambiarTab('usuarios');
+  }else alert("Error al crear");
+};
 
-// ================= USUARIOS =================
-async function cargarUsuarios() {
+/* ==================== USUARIOS ==================== */
+async function cargarUsuarios(){
   const res = await fetch(`${API}/usuarios`);
-  const usuarios = await res.json();
-  const cont = document.getElementById("usuarios-lista");
-  cont.innerHTML = "";
-
-  usuarios.forEach(u => {
-    const div = document.createElement("div");
-    div.className = "p-4 border rounded shadow bg-gray-50";
-
-    div.innerHTML = `
-      <p><b>Correo:</b>
-        <input id="correo-${u.id}" value="${u.id}" disabled class="border p-1 rounded w-full md:w-96">
-      </p>
-
-      <p><b>Contraseña:</b>
-        <div class="flex gap-2">
-          <input type="password" id="pass-${u.id}" value="${u.password}" disabled class="border p-1 rounded w-full md:w-96">
-          <button onclick="togglePass('${u.id}')">👁️</button>
-        </div>
-      </p>
-
-      <p><b>Rol:</b>
-        <select id="rol-${u.id}" disabled class="border p-1 rounded">
-          <option value="cliente" ${u.role==="cliente"?"selected":""}>Cliente</option>
-          <option value="admin" ${u.role==="admin"?"selected":""}>Admin</option>
-        </select>
-      </p>
-
-      <div class="mt-2 space-x-2">
-        <button onclick="habilitar('${u.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded">
-          ✏️ Actualizar
-        </button>
-
-        <button onclick="guardar('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded">
-          💾 Guardar
-        </button>
-
-        <button onclick="eliminar('${u.id}')" class="bg-red-600 text-white px-3 py-1 rounded">
-          🗑️ Eliminar
-        </button>
-      </div>
-    `;
-    cont.appendChild(div);
-  });
-}
-
-function habilitar(id) {
-  document.getElementById(`correo-${id}`).disabled = false;
-  document.getElementById(`pass-${id}`).disabled = false;
-  document.getElementById(`rol-${id}`).disabled = false;
-}
-
-function togglePass(id) {
-  const i = document.getElementById(`pass-${id}`);
-  i.type = i.type === "password" ? "text" : "password";
-}
-
-async function guardar(idAnterior) {
-  if (!confirm("¿Deseas actualizar este usuario?")) return;
-  if (!confirm("CONFIRMACIÓN FINAL")) return;
-
-  const correo = document.getElementById(`correo-${idAnterior}`).value.trim();
-  const password = document.getElementById(`pass-${idAnterior}`).value;
-  const rol = document.getElementById(`rol-${idAnterior}`).value;
-
-  const res = await fetch(`${API}/usuarios/${idAnterior}`, {
-    method: "PATCH",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ correo, password, rol })
-  });
-
   const data = await res.json();
-  alert(data.message || data.error || "Actualizado");
-  cargarUsuarios();
-}
+  tablaUsuarios.innerHTML = "";
 
-async function eliminar(correo) {
-  if (!confirm("¿Eliminar usuario y reclamos?")) return;
-  await fetch(`${API}/usuarios/${correo}`, { method: "DELETE" });
-  cargarUsuarios();
-}
+  data.forEach(u=>{
+    tablaUsuarios.innerHTML += `
+    <tr>
+      <td class="border p-2">${u.id}</td>
 
-// ================= RECLAMOS =================
-async function cargarReclamos() {
-  const res = await fetch(`${API}/api/reclamos`);
-  const reclamos = await res.json();
-  const cont = document.getElementById("reclamos-lista");
-  cont.innerHTML = "";
+      <td class="border p-2">
+        <div class="flex gap-2">
+          <input type="password" id="p-${u.id}" value="${u.password}" disabled class="border p-1 rounded w-full">
+          <button onclick="verPass('${u.id}')">👁️</button>
+        </div>
+      </td>
 
-  reclamos.forEach(r => {
-    const d = document.createElement("div");
-    d.className = "p-4 border rounded bg-white shadow";
-
-    d.innerHTML = `
-      <p><b>Tipo:</b> ${r.tipo}</p>
-      <p><b>Descripción:</b> ${r.descripcion}</p>
-      <p><b>Correo:</b> ${r.correo}</p>
-      <p><b>Estado:</b>
-        <select onchange="actualizarEstado('${r.id}', this.value)" class="border ml-2">
-          <option ${r.estado==="pendiente"?"selected":""}>pendiente</option>
-          <option ${r.estado==="en proceso"?"selected":""}>en proceso</option>
-          <option ${r.estado==="resuelto"?"selected":""}>resuelto</option>
+      <td class="border p-2">
+        <select id="r-${u.id}" disabled class="border p-1 rounded">
+          <option ${u.role=="cliente"?"selected":""}>cliente</option>
+          <option ${u.role=="admin"?"selected":""}>admin</option>
         </select>
-      </p>
-    `;
-    cont.appendChild(d);
+      </td>
+
+      <td class="border p-2 space-x-1">
+        <button onclick="editar('${u.id}')" class="bg-yellow-500 text-white px-2 rounded">Actualizar</button>
+        <button onclick="guardar('${u.id}')" class="bg-blue-600 text-white px-2 rounded">Guardar</button>
+        <button onclick="eliminar('${u.id}')" class="bg-red-600 text-white px-2 rounded">Eliminar</button>
+      </td>
+    </tr>`;
   });
 }
 
-async function actualizarEstado(id, estado) {
-  await fetch(`${API}/api/reclamos/${id}`, {
-    method: "PATCH",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ estado })
-  });
-  alert("Estado actualizado");
+function editar(id){
+  document.getElementById(`p-${id}`).disabled=false;
+  document.getElementById(`r-${id}`).disabled=false;
 }
 
-window.onload = () => {
+async function guardar(id){
+  if(!confirm("¿Seguro de guardar cambios?")) return;
+  if(!confirm("Confirmar nuevamente")) return;
+
+  await fetch(`${API}/usuarios/${id}`,{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      password:document.getElementById(`p-${id}`).value,
+      rol:document.getElementById(`r-${id}`).value
+    })
+  });
+
+  alert("Actualizado correctamente");
+  cargarUsuarios();
+}
+
+async function eliminar(id){
+  if(confirm("¿Eliminar usuario y reclamos?")){
+    await fetch(`${API}/usuarios/${id}`,{method:'DELETE'});
+    cargarUsuarios();
+  }
+}
+
+function verPass(id){
+  const i=document.getElementById(`p-${id}`);
+  i.type = i.type==="password"?"text":"password";
+}
+
+/* ==================== RECLAMOS ==================== */
+async function cargarReclamos(){
+  const res = await fetch(`${API}/api/reclamos`);
+  const data = await res.json();
+  tablaReclamos.innerHTML="";
+
+  data.forEach(r=>{
+    const color =
+      r.estado=="pendiente"?"bg-yellow-100":
+      r.estado=="en proceso"?"bg-blue-100":"bg-green-100";
+
+    tablaReclamos.innerHTML+=`
+    <tr class="${color}">
+      <td class="border p-2">${r.tipo}</td>
+      <td class="border p-2">${r.descripcion}</td>
+      <td class="border p-2">${r.correo}</td>
+      <td class="border p-2">
+        <select onchange="estado('${r.id}',this.value)" class="border p-1">
+          <option ${r.estado=="pendiente"?"selected":""}>pendiente</option>
+          <option ${r.estado=="en proceso"?"selected":""}>en proceso</option>
+          <option ${r.estado=="resuelto"?"selected":""}>resuelto</option>
+        </select>
+      </td>
+    </tr>`;
+  });
+}
+
+async function estado(id,estado){
+  await fetch(`${API}/api/reclamos/${id}`,{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({estado})
+  });
+}
+
+window.onload=()=>{
   cargarUsuarios();
   cargarReclamos();
-  cambiarTab("tab-crear");
-};
+}
 </script>
 
 </body>
