@@ -102,7 +102,7 @@
     <th class="border p-2">Dirección</th>
     <th class="border p-2">Correo</th>
     <th class="border p-2">Estado</th>
-    <th class="border p-2">Fecha (Perú)</th>
+    <th class="border p-2">Fecha</th>
   </tr>
 </thead>
 
@@ -247,17 +247,32 @@ async function cargarReclamos(){
   tablaReclamos.innerHTML = "";
 
   lista.forEach(r => {
-    const color =
-      r.estado === "pendiente" ? "bg-yellow-100" :
-      r.estado === "en proceso" ? "bg-blue-100" :
-      "bg-green-100";
+    const estado = (r.estado || "").toLowerCase();
+
+const color =
+  estado === "pendiente" ? "bg-yellow-100" :
+  estado === "en proceso" ? "bg-blue-100" :
+  estado === "resuelto" ? "bg-green-100" :
+  "bg-gray-100";
+
 
     // 🕒 Fecha en horario de Perú
-    const fechaPeru = new Date(r.fecha).toLocaleString("es-PE", {
-      timeZone: "America/Lima",
-      dateStyle: "short",
-      timeStyle: "short"
-    });
+    function fechaPeruCorrecta(fechaISO) {
+  const fechaUTC = new Date(fechaISO);
+
+  // Restar 5 horas (UTC-5 Perú)
+  fechaUTC.setHours(fechaUTC.getHours() - 5);
+
+  return fechaUTC.toLocaleString("es-PE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+}
+
 
     tablaReclamos.innerHTML += `
       <tr class="${color}">
@@ -273,7 +288,8 @@ async function cargarReclamos(){
             <option ${r.estado=="resuelto"?"selected":""}>resuelto</option>
           </select>
         </td>
-        <td class="border p-2">${fechaPeru}</td>
+        <td class="border p-2">${fechaPeruCorrecta(r.fecha)}</td>
+
       </tr>
     `;
   });
