@@ -98,6 +98,11 @@ AOS.init({ duration:700, once:true });
 const API = "https://siresu1.onrender.com";
 const correo = localStorage.getItem("correo");
 
+if (!correo) {
+  alert("Sesión no válida. Inicia sesión nuevamente.");
+  location.href = "index.html";
+}
+
 let coords = null;
 
 /* ===== SESIÓN ===== */
@@ -107,17 +112,22 @@ function cerrarSesion(){
 }
 
 /* ===== TABS ===== */
-function cambiarTab(e,tab){
+function cambiarTab(e, tab) {
   document.getElementById("formulario").classList.add("tab-hidden");
   document.getElementById("historial").classList.add("tab-hidden");
 
   document.getElementById(tab).classList.remove("tab-hidden");
 
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("border-blue-600"));
+  document.querySelectorAll(".tab-btn").forEach(b =>
+    b.classList.remove("border-blue-600")
+  );
   e.target.classList.add("border-blue-600");
 
-  if(tab==="historial") cargarHistorial();
+  if (tab === "historial") {
+    cargarHistorial();
+  }
 }
+
 
 /* ===== UBICACIÓN (SIN ALERT MOLESTO) ===== */
 function detectarUbicacion(){
@@ -166,7 +176,8 @@ async function cargarHistorial(){
   const res = await fetch(`${API}/api/reclamos`);
   const data = await res.json();
 
-  const lista = data.filter(r=>r.correo===correo);
+  const lista = data.filter(r => r.correo === correo);
+
   listaHistorial.innerHTML = "";
 
   if(lista.length===0){
