@@ -120,13 +120,14 @@ def crear_reclamo():
 
     try:
         firestore_db.collection("reclamos").add({
-            "tipo": data.get("tipo"),
-            "descripcion": data.get("descripcion"),
-            "ubicacion": data.get("ubicacion"),
-            "correo": data.get("correo", ""),
-            "estado": "Pendiente",
-            "fecha": datetime.now().isoformat()
-        })
+    "tipo": data.get("tipo"),
+    "descripcion": data.get("descripcion"),
+    "ubicacion": data.get("ubicacion"),
+    "correo": data.get("correo"),
+    "estado": "pendiente",
+    "fecha": datetime.now().isoformat()
+})
+
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
