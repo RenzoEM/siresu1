@@ -154,7 +154,8 @@ if (!correo) {
   }
 
   /* ===== ENVIAR RECLAMO ===== */
-  form-reclamo.addEventListener("submit", async e=>{
+  document.getElementById("form-reclamo").addEventListener("submit", async e => {
+
     e.preventDefault();
 
     await fetch(`${API}/reclamos`,{
