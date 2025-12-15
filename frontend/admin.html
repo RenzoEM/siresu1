@@ -2,66 +2,75 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Admin - SIRESU</title>
+  <title>Admin - SIRESU</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-6">
 
-<h1 class="text-3xl font-bold mb-6 text-center">Panel de Administración</h1>
+<body class="bg-gradient-to-r from-indigo-500 to-purple-600 min-h-screen p-6">
 
-<!-- CREAR USUARIO -->
-<div class="bg-white p-6 rounded shadow mb-8">
-  <h2 class="text-xl font-bold mb-4">Crear Usuario</h2>
+<div class="container mx-auto bg-white rounded-2xl shadow-xl p-6">
 
-  <input id="newCorreo" type="email" placeholder="Correo"
-    class="border p-2 w-full mb-2">
+  <h1 class="text-3xl font-bold text-center text-indigo-700 mb-8">
+    Panel de Administración - SIRESU
+  </h1>
 
-  <input id="newPassword" type="password" placeholder="Contraseña"
-    class="border p-2 w-full mb-2">
+  <!-- ====== CREAR USUARIO ====== -->
+  <div class="bg-gray-100 p-6 rounded-xl mb-8">
+    <h2 class="text-xl font-bold mb-4">Crear Usuario</h2>
 
-  <select id="newRol" class="border p-2 w-full mb-2">
-    <option value="cliente">Cliente</option>
-    <option value="admin">Admin</option>
-  </select>
+    <div class="grid md:grid-cols-3 gap-4">
+      <input id="newCorreo" type="email" placeholder="Correo"
+        class="border p-2 rounded">
 
-  <button onclick="crearUsuario()"
-    class="bg-blue-600 text-white px-4 py-2 rounded">
-    Crear Usuario
-  </button>
-</div>
+      <input id="newPassword" type="password" placeholder="Contraseña"
+        class="border p-2 rounded">
 
-<!-- TABLA USUARIOS -->
-<div class="bg-white p-6 rounded shadow mb-8">
-  <h2 class="text-xl font-bold mb-4">Usuarios</h2>
+      <select id="newRol" class="border p-2 rounded">
+        <option value="cliente">Cliente</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
 
-  <table class="w-full border">
-    <thead class="bg-gray-200">
-      <tr>
-        <th class="border p-2">Correo</th>
-        <th class="border p-2">Contraseña</th>
-        <th class="border p-2">Rol</th>
-        <th class="border p-2">Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="tablaUsuarios"></tbody>
-  </table>
-</div>
+    <button onclick="crearUsuario()"
+      class="mt-4 bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">
+      Crear Usuario
+    </button>
+  </div>
 
-<!-- TABLA RECLAMOS -->
-<div class="bg-white p-6 rounded shadow">
-  <h2 class="text-xl font-bold mb-4">Reclamos</h2>
+  <!-- ====== USUARIOS ====== -->
+  <div class="bg-gray-100 p-6 rounded-xl mb-8">
+    <h2 class="text-xl font-bold mb-4">Usuarios</h2>
 
-  <table class="w-full border">
-    <thead class="bg-gray-200">
-      <tr>
-        <th class="border p-2">Tipo</th>
-        <th class="border p-2">Descripción</th>
-        <th class="border p-2">Correo</th>
-        <th class="border p-2">Estado</th>
-      </tr>
-    </thead>
-    <tbody id="tablaReclamos"></tbody>
-  </table>
+    <table class="w-full border">
+      <thead class="bg-indigo-200">
+        <tr>
+          <th class="border p-2">Correo</th>
+          <th class="border p-2">Contraseña</th>
+          <th class="border p-2">Rol</th>
+          <th class="border p-2">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tablaUsuarios"></tbody>
+    </table>
+  </div>
+
+  <!-- ====== RECLAMOS ====== -->
+  <div class="bg-gray-100 p-6 rounded-xl">
+    <h2 class="text-xl font-bold mb-4">Reclamos</h2>
+
+    <table class="w-full border">
+      <thead class="bg-indigo-200">
+        <tr>
+          <th class="border p-2">Tipo</th>
+          <th class="border p-2">Descripción</th>
+          <th class="border p-2">Correo</th>
+          <th class="border p-2">Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tablaReclamos"></tbody>
+    </table>
+  </div>
+
 </div>
 
 <script>
@@ -81,27 +90,29 @@ async function cargarUsuarios() {
         <td class="border p-2">${u.id}</td>
 
         <td class="border p-2">
-          <input type="password" value="${u.password}"
-            id="pass-${u.id}" disabled class="border p-1 w-full">
+          <div class="flex gap-2">
+            <input type="password" value="${u.password}"
+              id="pass-${u.id}" disabled class="border p-1 w-full rounded">
+            <button onclick="togglePass('${u.id}')">👁️</button>
+          </div>
         </td>
 
         <td class="border p-2">
-          <select id="rol-${u.id}" disabled class="border p-1 w-full">
+          <select id="rol-${u.id}" disabled class="border p-1 rounded w-full">
             <option ${u.role === "cliente" ? "selected" : ""}>cliente</option>
             <option ${u.role === "admin" ? "selected" : ""}>admin</option>
           </select>
         </td>
 
-        <td class="border p-2 space-x-2">
+        <td class="border p-2 space-x-1">
           <button onclick="habilitar('${u.id}')"
-            class="bg-yellow-500 text-white px-2 py-1 rounded">
-            Editar
-          </button>
+            class="bg-yellow-500 text-white px-2 py-1 rounded">Editar</button>
 
           <button onclick="actualizarUsuario('${u.id}')"
-            class="bg-green-600 text-white px-2 py-1 rounded">
-            Actualizar
-          </button>
+            class="bg-green-600 text-white px-2 py-1 rounded">Actualizar</button>
+
+          <button onclick="eliminarUsuario('${u.id}')"
+            class="bg-red-600 text-white px-2 py-1 rounded">Eliminar</button>
         </td>
       </tr>
     `;
@@ -113,36 +124,44 @@ function habilitar(correo) {
   document.getElementById(`rol-${correo}`).disabled = false;
 }
 
+function togglePass(correo) {
+  const input = document.getElementById(`pass-${correo}`);
+  input.type = input.type === "password" ? "text" : "password";
+}
+
 async function actualizarUsuario(correo) {
-  if (!confirm("¿Seguro que deseas actualizar este usuario?")) return;
-  if (!confirm("CONFIRMACIÓN FINAL: ¿Actualizar datos?")) return;
+  if (!confirm("¿Deseas actualizar este usuario?")) return;
+  if (!confirm("CONFIRMACIÓN FINAL")) return;
 
   const password = document.getElementById(`pass-${correo}`).value;
   const rol = document.getElementById(`rol-${correo}`).value;
 
   const res = await fetch(`${API}/usuarios/${correo}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      correo,
-      password,
-      rol
-    })
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ correo, password, rol })
   });
 
   const data = await res.json();
-  alert(data.message || "Usuario actualizado");
+  alert(data.message || "Actualizado");
+  cargarUsuarios();
+}
+
+async function eliminarUsuario(correo) {
+  if (!confirm("¿Eliminar usuario y reclamos?")) return;
+
+  await fetch(`${API}/usuarios/${correo}`, { method: "DELETE" });
   cargarUsuarios();
 }
 
 async function crearUsuario() {
-  const correo = document.getElementById("newCorreo").value;
-  const password = document.getElementById("newPassword").value;
-  const rol = document.getElementById("newRol").value;
+  const correo = newCorreo.value;
+  const password = newPassword.value;
+  const rol = newRol.value;
 
   const res = await fetch(`${API}/crear-usuario`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ correo, password, rol })
   });
 
