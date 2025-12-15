@@ -4,36 +4,49 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cliente - Reportes Ciudadanos</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
   <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+
+  <style>
+    .tab-hidden { display: none }
+    .tab-visible { display: block }
+  </style>
 </head>
+
 <body class="bg-gray-100 font-sans">
 
-  <div
-    class="max-w-4xl mx-auto p-6 bg-white shadow-xl mt-6 rounded-xl"
-    data-aos="fade-up"
-  >
-    <div class="fixed top-4 right-4">
-  <button
-    onclick="cerrarSesion()"
-    class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded shadow-md transform active:scale-95 transition duration-150 ease-in-out"
-    aria-label="Cerrar sesión"
-  >
-    Cerrar sesión
-  </button>
-</div>
+<div class="max-w-4xl mx-auto p-6 bg-white shadow-xl mt-6 rounded-xl" data-aos="fade-up">
 
+  <!-- CERRAR SESIÓN -->
+  <div class="fixed top-4 right-4">
+    <button onclick="cerrarSesion()"
+      class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded shadow-md">
+      Cerrar sesión
+    </button>
+  </div>
 
-    <form id="form-reclamo" class="space-y-6 mt-6" data-aos="fade-up" data-aos-delay="200">
+  <!-- TABS -->
+  <div class="flex space-x-4 border-b mb-6 text-sm font-medium">
+    <button class="tab-btn border-b-2 border-blue-600 px-4 py-2"
+      onclick="cambiarTab(event,'formulario')">➕ Nuevo Reclamo</button>
+
+    <button class="tab-btn px-4 py-2"
+      onclick="cambiarTab(event,'historial')">📂 Historial</button>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div id="formulario" class="tab-visible">
+
+    <form id="form-reclamo" class="space-y-6 mt-6" data-aos="fade-up">
+
       <div>
         <label class="block font-semibold mb-1">Tipo de reclamo:</label>
-        <select
-          id="tipo"
-          required
-          class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <select id="tipo" required class="w-full p-2 border rounded">
           <option value="">Seleccione</option>
           <option>Basura</option>
           <option>Alumbrado</option>
@@ -45,183 +58,135 @@
 
       <div>
         <label class="block font-semibold mb-1">Descripción:</label>
-        <textarea
-          id="descripcion"
-          required
-          class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows="4"
-        ></textarea>
+        <textarea id="descripcion" required rows="4"
+          class="w-full p-2 border rounded"></textarea>
       </div>
 
       <div>
         <label class="block font-semibold mb-1">Ubicación:</label>
-        <input
-          type="text"
-          id="ubicacion"
-          readonly
-          class="w-full p-2 border rounded bg-gray-100 cursor-not-allowed"
-        />
-        <button
-          type="button"
-          onclick="detectarUbicacion()"
-          class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transform active:scale-95 transition duration-150 ease-in-out"
-        >
+        <input id="ubicacion" readonly
+          class="w-full p-2 border rounded bg-gray-100" />
+
+        <button type="button" onclick="detectarUbicacion()"
+          class="mt-2 bg-blue-600 text-white px-4 py-2 rounded">
           Detectar ubicación
         </button>
+
         <div id="mapa" class="h-64 mt-4 rounded hidden"></div>
       </div>
 
-      <div>
-        <label class="block font-semibold mb-1">Correo:</label>
-        <input
-          type="email"
-          id="correo"
-          required
-          class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <button
-        type="submit"
-        class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded font-semibold transform active:scale-95 transition duration-150 ease-in-out"
-      >
+      <button type="submit"
+        class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded font-semibold">
         Enviar Reclamo
       </button>
+
     </form>
-
-    <hr class="my-8" />
-
-    <h2 class="text-xl font-semibold mb-4" data-aos="fade-up" data-aos-delay="300">
-      Historial de mis Reclamos
-    </h2>
-    <div id="historial" class="mt-4 space-y-4" data-aos="fade-up" data-aos-delay="400"></div>
   </div>
 
-  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-  <script>
-    AOS.init({ duration: 700, once: true });
+  <!-- HISTORIAL -->
+  <div id="historial" class="tab-hidden">
+    <h2 class="text-xl font-semibold mb-4">Historial de mis Reclamos</h2>
+    <div id="listaHistorial" class="space-y-4"></div>
+  </div>
 
-    let coords = null;
+</div>
 
-    function cerrarSesion() {
-      window.location.href = "index.html";
-    }
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+AOS.init({ duration:700, once:true });
 
-    async function detectarUbicacion() {
-      if (!navigator.geolocation) {
-        alert("La geolocalización no es compatible con tu navegador.");
-        return;
-      }
+const API = "https://siresu1.onrender.com";
+const correo = localStorage.getItem("correo");
 
-      navigator.geolocation.getCurrentPosition(
-        async function (pos) {
-          coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+let coords = null;
 
-          const url = `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json`;
-          try {
-            const res = await fetch(url);
-            const data = await res.json();
+/* ===== SESIÓN ===== */
+function cerrarSesion(){
+  localStorage.clear();
+  location.href = "index.html";
+}
 
-            document.getElementById("ubicacion").value = data.display_name;
+/* ===== TABS ===== */
+function cambiarTab(e,tab){
+  document.getElementById("formulario").classList.add("tab-hidden");
+  document.getElementById("historial").classList.add("tab-hidden");
 
-            const mapaEl = document.getElementById("mapa");
-            mapaEl.classList.remove("hidden");
+  document.getElementById(tab).classList.remove("tab-hidden");
 
-            // Inicializar mapa Leaflet (limpiar antes por si ya existe)
-            if (window.mapa) {
-              window.mapa.off();
-              window.mapa.remove();
-            }
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("border-blue-600"));
+  e.target.classList.add("border-blue-600");
 
-            window.mapa = L.map("mapa").setView([coords.lat, coords.lon], 16);
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(window.mapa);
-            L.marker([coords.lat, coords.lon])
-              .addTo(window.mapa)
-              .bindPopup("Tu ubicación detectada")
-              .openPopup();
-          } catch {
-            alert("No se pudo obtener la dirección de la ubicación.");
-          }
-        },
-        function () {
-          alert("No se pudo detectar la ubicación.");
-        }
+  if(tab==="historial") cargarHistorial();
+}
+
+/* ===== UBICACIÓN (SIN ALERT MOLESTO) ===== */
+function detectarUbicacion(){
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+
+    try{
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json`
       );
-    }
+      const data = await res.json();
+      ubicacion.value = data.display_name || `${coords.lat}, ${coords.lon}`;
+    }catch{}
 
-    document.getElementById("form-reclamo").addEventListener("submit", async function (e) {
-      e.preventDefault();
+    mapa.classList.remove("hidden");
 
-      const tipo = document.getElementById("tipo").value;
-      const descripcion = document.getElementById("descripcion").value;
-      const ubicacion = document.getElementById("ubicacion").value;
-      const correo = document.getElementById("correo").value;
+    if(window.mapa) window.mapa.remove();
+    window.mapa = L.map("mapa").setView([coords.lat,coords.lon],16);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(window.mapa);
+    L.marker([coords.lat,coords.lon]).addTo(window.mapa);
+  });
+}
 
-      localStorage.setItem("correo_cliente", correo);
+/* ===== ENVIAR RECLAMO ===== */
+document.getElementById("form-reclamo").addEventListener("submit", async e=>{
+  e.preventDefault();
 
-      try {
-        const res = await fetch("https://siresu1.onrender.com/reclamos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tipo, descripcion, ubicacion, correo }),
-        });
+  await fetch(`${API}/reclamos`,{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      tipo: tipo.value,
+      descripcion: descripcion.value,
+      ubicacion: ubicacion.value,
+      correo
+    })
+  });
 
-        if (res.ok) {
-          alert("Reclamo enviado correctamente.");
-          this.reset();
-          document.getElementById("mapa").classList.add("hidden");
-          cargarHistorial();
-        } else {
-          alert("Error al enviar reclamo.");
-        }
-      } catch {
-        alert("Error de red o servidor.");
-      }
-    });
+  alert("Reclamo enviado correctamente");
+  e.target.reset();
+  mapa.classList.add("hidden");
+});
 
-    async function cargarHistorial() {
-      const correo = localStorage.getItem("correo_cliente");
-      if (!correo) return;
+/* ===== HISTORIAL ===== */
+async function cargarHistorial(){
+  const res = await fetch(`${API}/api/reclamos`);
+  const data = await res.json();
 
-      try {
-        const res = await fetch("https://siresu1.onrender.com/api/reclamos");
-        const datos = await res.json();
+  const lista = data.filter(r=>r.correo===correo);
+  listaHistorial.innerHTML = "";
 
-        const historial = datos.filter((r) => r.correo === correo);
-        const contenedor = document.getElementById("historial");
-        contenedor.innerHTML = "";
+  if(lista.length===0){
+    listaHistorial.innerHTML =
+      "<p class='italic text-gray-500'>No hay reclamos registrados.</p>";
+    return;
+  }
 
-        if (historial.length === 0) {
-          contenedor.innerHTML =
-            '<p class="text-gray-500 italic">No hay reclamos registrados.</p>';
-          return;
-        }
+  lista.forEach(r=>{
+    listaHistorial.innerHTML += `
+      <div class="p-4 border rounded shadow bg-white">
+        <p><b>Tipo:</b> ${r.tipo}</p>
+        <p><b>Descripción:</b> ${r.descripcion}</p>
+        <p><b>Ubicación:</b> ${r.ubicacion}</p>
+        <p><b>Estado:</b> ${r.estado}</p>
+        <p><b>Fecha:</b> ${new Date(r.fecha).toLocaleString()}</p>
+      </div>`;
+  });
+}
+</script>
 
-        historial.forEach((r) => {
-          const fecha = new Date(r.fecha).toLocaleString();
-          const finalizado =
-            r.estado === "resuelto" && r.fecha_final
-              ? new Date(r.fecha_final).toLocaleString()
-              : "-";
-
-          const div = document.createElement("div");
-          div.className = "p-4 border rounded shadow bg-white";
-          div.innerHTML = `
-            <p><strong>Tipo:</strong> ${r.tipo}</p>
-            <p><strong>Descripción:</strong> ${r.descripcion}</p>
-            <p><strong>Ubicación:</strong> ${r.ubicacion}</p>
-            <p><strong>Estado:</strong> ${r.estado}</p>
-            <p><strong>Fecha reporte:</strong> ${fecha}</p>
-            <p><strong>Fecha finalización:</strong> ${finalizado}</p>
-          `;
-          contenedor.appendChild(div);
-        });
-      } catch {
-        alert("Error al cargar historial.");
-      }
-    }
-
-    window.onload = cargarHistorial;
-  </script>
 </body>
 </html>
