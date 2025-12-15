@@ -14,7 +14,6 @@
 
   <style>
     .tab-hidden { display: none }
-    .tab-visible { display: block }
   </style>
 </head>
 
@@ -32,17 +31,16 @@
 
   <!-- TABS -->
   <div class="flex space-x-4 border-b mb-6 text-sm font-medium">
-    <button class="tab-btn border-b-2 border-blue-600 px-4 py-2"
-      onclick="cambiarTab(event,'formulario')">➕ Nuevo Reclamo</button>
+    <button id="tabForm" class="tab-btn border-b-2 border-blue-600 px-4 py-2"
+      onclick="cambiarTab('formulario')">➕ Nuevo Reclamo</button>
 
-    <button class="tab-btn px-4 py-2"
-      onclick="cambiarTab(event,'historial')">📂 Historial</button>
+    <button id="tabHist" class="tab-btn px-4 py-2"
+      onclick="cambiarTab('historial')">📂 Historial</button>
   </div>
 
   <!-- FORMULARIO -->
-  <div id="formulario" class="tab-visible">
-
-    <form id="form-reclamo" class="space-y-6 mt-6" data-aos="fade-up">
+  <div id="formulario">
+    <form id="form-reclamo" class="space-y-6 mt-6">
 
       <div>
         <label class="block font-semibold mb-1">Tipo de reclamo:</label>
@@ -92,111 +90,116 @@
 </div>
 
 <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+
 <script>
-AOS.init({ duration:700, once:true });
+document.addEventListener("DOMContentLoaded", () => {
 
-const API = "https://siresu1.onrender.com";
-const correo = localStorage.getItem("correo");
+  AOS.init({ duration:700, once:true });
 
-if (!correo) {
-  alert("Sesión no válida. Inicia sesión nuevamente.");
-  location.href = "index.html";
-}
+  const API = "https://siresu1.onrender.com";
+  const correo = localStorage.getItem("correo");
 
-let coords = null;
-
-/* ===== SESIÓN ===== */
-function cerrarSesion(){
-  localStorage.clear();
-  location.href = "index.html";
-}
-
-/* ===== TABS ===== */
-function cambiarTab(e, tab) {
-  document.getElementById("formulario").classList.add("tab-hidden");
-  document.getElementById("historial").classList.add("tab-hidden");
-
-  document.getElementById(tab).classList.remove("tab-hidden");
-
-  document.querySelectorAll(".tab-btn").forEach(b =>
-    b.classList.remove("border-blue-600")
-  );
-  e.target.classList.add("border-blue-600");
-
-  if (tab === "historial") {
-    cargarHistorial();
-  }
-}
-
-
-/* ===== UBICACIÓN (SIN ALERT MOLESTO) ===== */
-function detectarUbicacion(){
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-
-    try{
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json`
-      );
-      const data = await res.json();
-      ubicacion.value = data.display_name || `${coords.lat}, ${coords.lon}`;
-    }catch{}
-
-    mapa.classList.remove("hidden");
-
-    if(window.mapa) window.mapa.remove();
-    window.mapa = L.map("mapa").setView([coords.lat,coords.lon],16);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(window.mapa);
-    L.marker([coords.lat,coords.lon]).addTo(window.mapa);
-  });
-}
-
-/* ===== ENVIAR RECLAMO ===== */
-document.getElementById("form-reclamo").addEventListener("submit", async e=>{
-  e.preventDefault();
-
-  await fetch(`${API}/reclamos`,{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      tipo: tipo.value,
-      descripcion: descripcion.value,
-      ubicacion: ubicacion.value,
-      correo
-    })
-  });
-
-  alert("Reclamo enviado correctamente");
-  e.target.reset();
-  mapa.classList.add("hidden");
-});
-
-/* ===== HISTORIAL ===== */
-async function cargarHistorial(){
-  const res = await fetch(`${API}/api/reclamos`);
-  const data = await res.json();
-
-  const lista = data.filter(r => r.correo === correo);
-
-  listaHistorial.innerHTML = "";
-
-  if(lista.length===0){
-    listaHistorial.innerHTML =
-      "<p class='italic text-gray-500'>No hay reclamos registrados.</p>";
+  if (!correo) {
+    alert("Sesión no válida. Inicia sesión nuevamente.");
+    location.href = "index.html";
     return;
   }
 
-  lista.forEach(r=>{
-    listaHistorial.innerHTML += `
-      <div class="p-4 border rounded shadow bg-white">
-        <p><b>Tipo:</b> ${r.tipo}</p>
-        <p><b>Descripción:</b> ${r.descripcion}</p>
-        <p><b>Ubicación:</b> ${r.ubicacion}</p>
-        <p><b>Estado:</b> ${r.estado}</p>
-        <p><b>Fecha:</b> ${new Date(r.fecha).toLocaleString()}</p>
-      </div>`;
+  let coords = null;
+  let mapaInstancia = null;
+
+  /* ===== SESIÓN ===== */
+  window.cerrarSesion = function(){
+    localStorage.clear();
+    location.href = "index.html";
+  }
+
+  /* ===== TABS ===== */
+  window.cambiarTab = function(tab){
+    formulario.classList.add("tab-hidden");
+    historial.classList.add("tab-hidden");
+
+    document.getElementById(tab).classList.remove("tab-hidden");
+
+    tabForm.classList.remove("border-blue-600");
+    tabHist.classList.remove("border-blue-600");
+
+    if(tab === "formulario") tabForm.classList.add("border-blue-600");
+    else {
+      tabHist.classList.add("border-blue-600");
+      cargarHistorial();
+    }
+  }
+
+  /* ===== UBICACIÓN ===== */
+  window.detectarUbicacion = function(){
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+
+      try{
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json`
+        );
+        const data = await res.json();
+        ubicacion.value = data.display_name || `${coords.lat}, ${coords.lon}`;
+      }catch{}
+
+      mapa.classList.remove("hidden");
+
+      if(mapaInstancia) mapaInstancia.remove();
+      mapaInstancia = L.map("mapa").setView([coords.lat,coords.lon],16);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapaInstancia);
+      L.marker([coords.lat,coords.lon]).addTo(mapaInstancia);
+    });
+  }
+
+  /* ===== ENVIAR RECLAMO ===== */
+  form-reclamo.addEventListener("submit", async e=>{
+    e.preventDefault();
+
+    await fetch(`${API}/reclamos`,{
+      method:"POST",
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        tipo: tipo.value,
+        descripcion: descripcion.value,
+        ubicacion: ubicacion.value,
+        correo
+      })
+    });
+
+    alert("Reclamo enviado correctamente");
+    e.target.reset();
+    mapa.classList.add("hidden");
   });
-}
+
+  /* ===== HISTORIAL ===== */
+  async function cargarHistorial(){
+    const res = await fetch(`${API}/api/reclamos`);
+    const data = await res.json();
+
+    const lista = data.filter(r => r.correo === correo);
+    listaHistorial.innerHTML = "";
+
+    if(lista.length === 0){
+      listaHistorial.innerHTML =
+        "<p class='italic text-gray-500'>No hay reclamos registrados.</p>";
+      return;
+    }
+
+    lista.forEach(r=>{
+      listaHistorial.innerHTML += `
+        <div class="p-4 border rounded shadow bg-white">
+          <p><b>Tipo:</b> ${r.tipo}</p>
+          <p><b>Descripción:</b> ${r.descripcion}</p>
+          <p><b>Ubicación:</b> ${r.ubicacion}</p>
+          <p><b>Estado:</b> ${r.estado}</p>
+          <p><b>Fecha:</b> ${new Date(r.fecha).toLocaleString()}</p>
+        </div>`;
+    });
+  }
+
+});
 </script>
 
 </body>
