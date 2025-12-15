@@ -99,11 +99,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const API = "https://siresu1.onrender.com";
   const correo = localStorage.getItem("correo");
 
-  if (!correo) {
-    alert("Sesión no válida. Inicia sesión nuevamente.");
-    location.href = "index.html";
-    return;
-  }
+if (!correo) {
+  alert("Sesión no válida. Inicia sesión nuevamente.");
+  location.href = "index.html";
+}
+
 
   let coords = null;
   let mapaInstancia = null;
