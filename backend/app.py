@@ -123,7 +123,7 @@ def crear_reclamo():
             "tipo": data.get("tipo"),
             "descripcion": data.get("descripcion"),
             "ubicacion": data.get("ubicacion"),
-            "correo": data.get("correo"),
+            "correo": data.get("correo", ""),
             "estado": "Pendiente",
             "fecha": datetime.now().isoformat()
         })
