@@ -28,13 +28,13 @@
   <!-- TABS -->
   <div class="flex space-x-4 border-b mb-6 text-sm font-medium">
     <button class="tab-link border-b-2 border-blue-600 px-4 py-2"
-      onclick="cambiarTab('crear')">➕ Agregar Usuario</button>
+      onclick="cambiarTab(event,'crear')">➕ Agregar Usuario</button>
 
     <button class="tab-link px-4 py-2"
-      onclick="cambiarTab('usuarios')">👥 Lista de Usuarios</button>
+      onclick="cambiarTab(event,'usuarios')">👥 Lista de Usuarios</button>
 
     <button class="tab-link px-4 py-2"
-      onclick="cambiarTab('reclamos')">📋 Lista de Reclamos</button>
+      onclick="cambiarTab(event,'reclamos')">📋 Lista de Reclamos</button>
   </div>
 
   <!-- CREAR USUARIO -->
@@ -75,6 +75,15 @@
   <div id="reclamos" class="tab-content tab-hidden">
     <h2 class="text-xl font-semibold mb-4">Lista de Reclamos</h2>
 
+    <select id="filtroEstado"
+      class="mb-4 border p-2 rounded"
+      onchange="cargarReclamos()">
+      <option value="">Todos</option>
+      <option value="pendiente">Pendiente</option>
+      <option value="en proceso">En proceso</option>
+      <option value="resuelto">Resuelto</option>
+    </select>
+
     <table class="w-full border">
       <thead class="bg-gray-200">
         <tr>
@@ -93,19 +102,26 @@
 <script>
 const API = "https://siresu1.onrender.com";
 
-/* ==================== SESIÓN ==================== */
+/* ===== SESIÓN ===== */
 function cerrarSesion(){
   localStorage.clear();
   location.href = "index.html";
 }
 
-/* ==================== TABS ==================== */
-function cambiarTab(tab){
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('tab-hidden'));
-  document.getElementById(tab).classList.remove('tab-hidden');
+/* ===== TABS ===== */
+function cambiarTab(e,tab){
+  document.querySelectorAll(".tab-content").forEach(t=>{
+    t.classList.add("tab-hidden");
+    t.classList.remove("tab-visible");
+  });
+  document.getElementById(tab).classList.remove("tab-hidden");
+  document.getElementById(tab).classList.add("tab-visible");
+
+  document.querySelectorAll(".tab-link").forEach(b=>b.classList.remove("border-blue-600"));
+  e.target.classList.add("border-blue-600");
 }
 
-/* ==================== CREAR USUARIO ==================== */
+/* ===== CREAR USUARIO ===== */
 formCrear.onsubmit = async e => {
   e.preventDefault();
 
@@ -113,28 +129,30 @@ formCrear.onsubmit = async e => {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      correo:nuevoCorreo.value,
+      correo:nuevoCorreo.value.trim(),
       password:nuevoPass.value,
       rol:nuevoRol.value
     })
   });
 
   if(res.ok){
-    alert("Usuario creado");
+    alert("✅ Usuario creado");
     formCrear.reset();
     cargarUsuarios();
-    cambiarTab('usuarios');
-  }else alert("Error al crear");
+    document.querySelectorAll(".tab-link")[1].click();
+  } else {
+    alert("❌ Error al crear usuario");
+  }
 };
 
-/* ==================== USUARIOS ==================== */
+/* ===== USUARIOS ===== */
 async function cargarUsuarios(){
   const res = await fetch(`${API}/usuarios`);
   const data = await res.json();
-  tablaUsuarios.innerHTML = "";
+  tablaUsuarios.innerHTML="";
 
   data.forEach(u=>{
-    tablaUsuarios.innerHTML += `
+    tablaUsuarios.innerHTML+=`
     <tr>
       <td class="border p-2">${u.id}</td>
 
@@ -147,8 +165,8 @@ async function cargarUsuarios(){
 
       <td class="border p-2">
         <select id="r-${u.id}" disabled class="border p-1 rounded">
-          <option ${u.role=="cliente"?"selected":""}>cliente</option>
-          <option ${u.role=="admin"?"selected":""}>admin</option>
+          <option value="cliente" ${u.role=="cliente"?"selected":""}>cliente</option>
+          <option value="admin" ${u.role=="admin"?"selected":""}>admin</option>
         </select>
       </td>
 
@@ -168,7 +186,7 @@ function editar(id){
 
 async function guardar(id){
   if(!confirm("¿Seguro de guardar cambios?")) return;
-  if(!confirm("Confirmar nuevamente")) return;
+  if(!confirm("Confirmar nuevamente la actualización")) return;
 
   await fetch(`${API}/usuarios/${id}`,{
     method:'PATCH',
@@ -179,12 +197,12 @@ async function guardar(id){
     })
   });
 
-  alert("Actualizado correctamente");
+  alert("✅ Usuario actualizado");
   cargarUsuarios();
 }
 
 async function eliminar(id){
-  if(confirm("¿Eliminar usuario y reclamos?")){
+  if(confirm("¿Eliminar usuario y todos sus reclamos?")){
     await fetch(`${API}/usuarios/${id}`,{method:'DELETE'});
     cargarUsuarios();
   }
@@ -192,19 +210,22 @@ async function eliminar(id){
 
 function verPass(id){
   const i=document.getElementById(`p-${id}`);
-  i.type = i.type==="password"?"text":"password";
+  i.type=i.type==="password"?"text":"password";
 }
 
-/* ==================== RECLAMOS ==================== */
+/* ===== RECLAMOS ===== */
 async function cargarReclamos(){
   const res = await fetch(`${API}/api/reclamos`);
   const data = await res.json();
+  const filtro = filtroEstado.value;
   tablaReclamos.innerHTML="";
 
-  data.forEach(r=>{
+  data
+  .filter(r=>!filtro || r.estado===filtro)
+  .forEach(r=>{
     const color =
-      r.estado=="pendiente"?"bg-yellow-100":
-      r.estado=="en proceso"?"bg-blue-100":"bg-green-100";
+      r.estado==="pendiente"?"bg-yellow-100":
+      r.estado==="en proceso"?"bg-blue-100":"bg-green-100";
 
     tablaReclamos.innerHTML+=`
     <tr class="${color}">
@@ -212,7 +233,7 @@ async function cargarReclamos(){
       <td class="border p-2">${r.descripcion}</td>
       <td class="border p-2">${r.correo}</td>
       <td class="border p-2">
-        <select onchange="estado('${r.id}',this.value)" class="border p-1">
+        <select onchange="cambiarEstado('${r.id}',this.value)" class="border p-1 rounded">
           <option ${r.estado=="pendiente"?"selected":""}>pendiente</option>
           <option ${r.estado=="en proceso"?"selected":""}>en proceso</option>
           <option ${r.estado=="resuelto"?"selected":""}>resuelto</option>
@@ -222,12 +243,13 @@ async function cargarReclamos(){
   });
 }
 
-async function estado(id,estado){
+async function cambiarEstado(id,estado){
   await fetch(`${API}/api/reclamos/${id}`,{
     method:'PATCH',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({estado})
   });
+  cargarReclamos();
 }
 
 window.onload=()=>{
