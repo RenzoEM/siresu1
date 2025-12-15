@@ -1,34 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Login - SIRESU</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iniciar Sesión - Siresu</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+
+  <style>
+    body {
+      background: linear-gradient(to right, #e3f2fd, #e1f5fe);
+    }
+  </style>
 </head>
 
-<body class="bg-gray-100 flex items-center justify-center h-screen">
+<body class="flex items-center justify-center min-h-screen font-sans">
 
-<div class="bg-white p-6 rounded shadow w-96">
-  <h2 class="text-xl font-bold mb-4 text-center">Iniciar Sesión</h2>
+  <div class="bg-white shadow-xl rounded-lg p-8 max-w-md w-full" data-aos="zoom-in">
 
-  <input id="username" type="email"
-    placeholder="Correo"
-    class="w-full p-2 border rounded mb-3">
+    <h2 class="text-3xl font-bold text-center text-blue-800 mb-6">
+      Iniciar Sesión
+    </h2>
 
-  <input id="password" type="password"
-    placeholder="Contraseña"
-    class="w-full p-2 border rounded mb-4">
+    <form id="login-form" class="space-y-5">
 
-  <button onclick="login()"
-    class="w-full bg-blue-600 text-white py-2 rounded">
-    Ingresar
-  </button>
-</div>
+      <input type="email" id="username"
+        placeholder="Correo electrónico" required
+        class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400">
+
+      <input type="password" id="password"
+        placeholder="Contraseña" required
+        class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400">
+
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-semibold">
+        Entrar
+      </button>
+
+    </form>
+
+    <p class="text-center text-sm text-gray-600 mt-6">
+      ¿No tienes cuenta?
+      <a href="register.html" class="text-blue-600 hover:underline font-medium">
+        Regístrate aquí
+      </a>
+    </p>
+
+  </div>
 
 <script>
-async function login() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
+AOS.init();
+
+document.getElementById("login-form").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const username = document.getElementById("username").value.trim().toLowerCase();
+  const password = document.getElementById("password").value;
 
   const res = await fetch("https://siresu1.onrender.com/login", {
     method: "POST",
@@ -43,19 +72,19 @@ async function login() {
     return;
   }
 
-  // 🔥 GUARDADO CORRECTO Y ÚNICO
+  // 🔥 CLAVE PARA TODO EL SISTEMA
   localStorage.clear();
   localStorage.setItem("correo", username);
   localStorage.setItem("role", data.role);
 
-  console.log("Correo guardado:", localStorage.getItem("correo"));
+  alert("✅ Sesión iniciada correctamente");
 
   if (data.role === "admin") {
-    window.location.href = "admin.html";
+    location.href = "admin.html";
   } else {
-    window.location.href = "cliente.html";
+    location.href = "cliente.html";
   }
-}
+});
 </script>
 
 </body>
