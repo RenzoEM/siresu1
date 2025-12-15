@@ -219,21 +219,36 @@ def listar_usuarios():
 @app.route("/usuarios/<correo>", methods=["PATCH"])
 def actualizar_usuario(correo):
     data = request.get_json()
-    nuevo_correo = data.get("correo")
-    password = data.get("password")
-    rol = data.get("rol")
+    nuevo_correo = data.get("correo", correo).strip()
+    password = data.get("password", "").strip()
+    rol = data.get("rol", "cliente").strip()
 
     try:
-        # Eliminar antiguo y crear nuevo si cambia el correo
+        user_ref = firestore_db.collection("users").document(correo)
+        user_doc = user_ref.get()
+
+        if not user_doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        user_data = user_doc.to_dict()
+
+        # Mantener contraseña si no se cambió
+        nueva_password = password if password else user_data.get("password")
+
+        # Si cambia el correo, eliminar el anterior
         if nuevo_correo != correo:
-            firestore_db.collection("users").document(correo).delete()
+            user_ref.delete()
+
         firestore_db.collection("users").document(nuevo_correo).set({
-            "password": password,
+            "password": nueva_password,
             "role": rol
         })
-        return jsonify({"message": "Actualizado"}), 200
+
+        return jsonify({"message": "Usuario actualizado correctamente"}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/usuarios/<correo>", methods=["DELETE"])
 def eliminar_usuario(correo):
